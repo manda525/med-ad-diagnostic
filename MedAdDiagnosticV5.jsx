@@ -7,6 +7,10 @@ const RB = rulebookData.RB;
 // 補完キーワード（rulebook.jsonから読み込み）
 const EX = rulebookData.EX;
 
+// ルール件数（rulebook.jsonから動的算出。ラベルのstale化を防ぐ）
+const RULE_COUNT = RB.length;
+const RULE_VER = "v10";
+
 const CLIENTS = [
   {id:"all",  label:"すべて",           icon:"🔍", desc:"業種問わず診断"},
   {id:"d2c",  label:"D2C・健康食品",    icon:"💊", desc:"サプリ・食品・機能性素材"},
@@ -190,7 +194,7 @@ export default function App() {
     let lastErr = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        if (attempt === 1) setStepMsg(`ルールブックv9（487件）と照合中...`);
+        if (attempt === 1) setStepMsg(`ルールブック${RULE_VER}（${RULE_COUNT}件）と照合中...`);
         else setStepMsg(`再試行中... (${attempt}/3)`);
         const m = matchRules(inputText);
         setHits(m);
@@ -228,11 +232,94 @@ export default function App() {
   return (
     <div style={{padding:"1.5rem 0",fontFamily:"var(--font-sans)"}}>
 
+      {/* ===== HERO（誰向け・何が解ける・なぜ作ったか） ===== */}
+      <div style={{
+        position:"relative",
+        background:"var(--color-background-secondary)",
+        border:"0.5px solid var(--color-border-tertiary)",
+        borderRadius:"var(--border-radius-lg)",
+        padding:"1.75rem 1.5rem",
+        marginBottom:"1.25rem",
+        overflow:"hidden"
+      }}>
+        <div style={{
+          position:"absolute",top:0,left:0,width:"100%",height:3,
+          background:"linear-gradient(90deg, var(--color-border-info), var(--color-border-success))"
+        }}/>
+        <span style={{
+          display:"inline-block",fontSize:11,letterSpacing:"0.08em",
+          color:"var(--color-text-info)",background:"var(--color-background-info)",
+          padding:"3px 10px",borderRadius:"var(--border-radius-md)",fontWeight:500,marginBottom:12
+        }}>薬剤師 × 医療広告コンサルが設計</span>
+
+        <h1 style={{fontSize:24,fontWeight:600,lineHeight:1.4,margin:"0 0 10px",color:"var(--color-text-primary)"}}>
+          その広告文、出す前に薬機法リスクを一次診断。
+        </h1>
+        <p style={{fontSize:14,lineHeight:1.8,color:"var(--color-text-secondary)",margin:"0 0 18px",maxWidth:680}}>
+          LP・SNS投稿・商品ページの文言を貼り付けるだけで、薬機法・景表法・医療広告ガイドラインの観点から
+          リスク箇所と修正案を返します。判断に迷う前の「最初の一手」として使う想定です。
+          最終的な適否判断は人による監修で詰めます。
+        </p>
+
+        {/* 誰向け */}
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:18}}>
+          {["D2C・健康食品","化粧品・美容","クリニック","広告代理店","個人発信・アフィリ"].map((t,i)=>(
+            <span key={i} style={{
+              fontSize:12,color:"var(--color-text-primary)",
+              background:"var(--color-background-primary)",
+              border:"0.5px solid var(--color-border-tertiary)",
+              padding:"4px 11px",borderRadius:"var(--border-radius-md)"
+            }}>{t}</span>
+          ))}
+        </div>
+
+        {/* 3つの価値 */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:12,marginBottom:18}}>
+          {[
+            {n:RULE_COUNT+"件", t:"現場ルールで照合", d:"案件で見つけたNG表現を反映し続ける成長型ルールブック"},
+            {n:"3観点", t:"横断チェック", d:"薬機法・景表法・医療広告GLを一度に確認"},
+            {n:"修正案", t:"NG→OKを併記", d:"指摘だけで終わらせず、書き換え方向まで提示"},
+          ].map((v,i)=>(
+            <div key={i} style={{
+              background:"var(--color-background-primary)",
+              border:"0.5px solid var(--color-border-tertiary)",
+              borderRadius:"var(--border-radius-md)",padding:"12px 14px"
+            }}>
+              <div style={{fontSize:20,fontWeight:600,color:"var(--color-text-info)",lineHeight:1.2}}>{v.n}</div>
+              <div style={{fontSize:13,fontWeight:500,color:"var(--color-text-primary)",margin:"3px 0 4px"}}>{v.t}</div>
+              <div style={{fontSize:11,color:"var(--color-text-tertiary)",lineHeight:1.5}}>{v.d}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* なぜまさが作ったか＋導線 */}
+        <div style={{
+          borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:14,
+          display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14,flexWrap:"wrap"
+        }}>
+          <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0,lineHeight:1.7,maxWidth:420}}>
+            制作：医療広告コンサル まさ（薬剤師／薬機法管理者／景表法第1級）。
+            企業内薬剤師として健康食品分野に携わりながら、広告代理店・メーカー・医療機関の案件に向き合う中で
+            溜まった判断軸をツール化しました。
+          </p>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
+              style={{fontSize:12,padding:"6px 14px",borderRadius:"var(--border-radius-md)",background:"#06C755",color:"#fff",border:"0.5px solid #06C755",textDecoration:"none",fontWeight:500}}>💬 LINEで相談・更新を受け取る</a>
+            <a href="https://note.com/med_ad_consult" target="_blank" rel="noopener noreferrer"
+              style={{fontSize:12,padding:"6px 14px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",color:"var(--color-text-primary)",border:"0.5px solid var(--color-border-tertiary)",textDecoration:"none"}}>📝 note</a>
+            <a href="https://x.com/zero89314" target="_blank" rel="noopener noreferrer"
+              style={{fontSize:12,padding:"6px 14px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",color:"var(--color-text-primary)",border:"0.5px solid var(--color-border-tertiary)",textDecoration:"none"}}>𝕏 @zero89314</a>
+            <a href="https://crowdworks.jp/public/employees/1166920" target="_blank" rel="noopener noreferrer"
+              style={{fontSize:12,padding:"6px 14px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",color:"var(--color-text-primary)",border:"0.5px solid var(--color-border-tertiary)",textDecoration:"none"}}>実績を見る</a>
+          </div>
+        </div>
+      </div>
+
       {/* ヘッダー */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem",gap:12}}>
         <div>
           <h2 style={{fontSize:18,fontWeight:500,margin:"0 0 3px",color:"var(--color-text-primary)"}}>医療広告リスク診断ツール</h2>
-          <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0}}>薬機法・景表法・医療広告GL・粧工連2020 | ルールv9（487件）| β版</p>
+          <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0}}>薬機法・景表法・医療広告GL・粧工連2020 | ルール{RULE_VER}（{RULE_COUNT}件）| β版</p>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>残り {Math.max(0, HARD_LIMIT - usageCount)}/{HARD_LIMIT}回</span>
@@ -427,7 +514,7 @@ export default function App() {
 
           {hits.length>0&&(
             <div style={{background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:"var(--border-radius-lg)",padding:"1rem 1.25rem",marginBottom:12}}>
-              <p style={{fontSize:13,fontWeight:500,margin:"0 0 10px",color:"var(--color-text-primary)"}}>📚 ルールブックv9 照合結果 ({hits.length}件)</p>
+              <p style={{fontSize:13,fontWeight:500,margin:"0 0 10px",color:"var(--color-text-primary)"}}>📚 ルールブック{RULE_VER} 照合結果 ({hits.length}件)</p>
               {hits.slice(0,8).map((m,i)=>{
                 const r=riskLv(m.risk);
                 return(
