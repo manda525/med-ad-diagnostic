@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# Next.js build outputs
+.next/
+out/
+build/
+
+# macOS
+.DS_Store
+
+# logs
+*.log
+npm-debug.log*
+
+# environment files (keep .env.local.example tracked)
+.env
+.env.local
+.env*.local
+
+# Vercel
+.vercel
