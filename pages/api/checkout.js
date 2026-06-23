@@ -1,16 +1,10 @@
 import { getStripe } from "../../lib/stripe";
+import { getBaseUrl } from "../../lib/baseUrl";
 
 const PRICE_BY_PLAN = {
   individual: process.env.STRIPE_PRICE_INDIVIDUAL,
   corporate: process.env.STRIPE_PRICE_CORPORATE,
 };
-
-function getBaseUrl(req) {
-  const proto = (req.headers["x-forwarded-proto"] || "https").toString().split(",")[0];
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  if (host) return `${proto}://${host}`;
-  return (process.env.NEXT_PUBLIC_SITE_URL || "https://med-ad-diagnostic.vercel.app").replace(/\/$/, "");
-}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -30,7 +24,7 @@ export default async function handler(req, res) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${baseUrl}/?checkout=success`,
+      success_url: `${baseUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/?checkout=cancel`,
       allow_promotion_codes: true,
       locale: "ja",

@@ -190,20 +190,45 @@ export default function App() {
     return window.localStorage.getItem("med_ad_pro") === "1";
   });
   const [checkoutLoading, setCheckoutLoading] = useState("");
+  const [customerId, setCustomerId] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem("med_ad_customer") || "";
+  });
 
-  // Stripe Checkout からの復帰を処理（?checkout=success → Pro解放）
+  // Stripe Checkout からの復帰を処理（?checkout=success → サーバーで検証 → Pro解放）
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const status = params.get("checkout");
     if (!status) return;
-    if (status === "success") {
-      window.localStorage.setItem("med_ad_pro", "1");
-      setIsPro(true);
-    }
+    const sessionId = params.get("session_id");
     params.delete("checkout");
+    params.delete("session_id");
     const qs = params.toString();
     window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+    if (status !== "success" || !sessionId) return;
+    (async () => {
+      try {
+        const r = await fetch("/api/verify-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (r.ok && data.pro) {
+          window.localStorage.setItem("med_ad_pro", "1");
+          setIsPro(true);
+          if (data.customerId) {
+            window.localStorage.setItem("med_ad_customer", data.customerId);
+            setCustomerId(data.customerId);
+          }
+        } else {
+          setErr("決済の確認ができませんでした。反映されない場合はお問い合わせください。");
+        }
+      } catch {
+        setErr("決済の確認中にエラーが発生しました。");
+      }
+    })();
   }, []);
 
   const startCheckout = useCallback(async (plan) => {
@@ -226,6 +251,24 @@ export default function App() {
       setCheckoutLoading("");
     }
   }, []);
+
+  const openPortal = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    const cid = customerId || window.localStorage.getItem("med_ad_customer");
+    if (!cid) { setErr("お客様情報が見つかりません。"); return; }
+    try {
+      const r = await fetch("/api/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: cid }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.url) { window.location.href = data.url; return; }
+      throw new Error(data.error || "管理ページを開けませんでした");
+    } catch (e) {
+      setErr(e.message || "管理ページを開けませんでした");
+    }
+  }, [customerId]);
 
   const isOverFreeLimit = usageCount >= FREE_LIMIT && !isPro;
   const isOverHardLimit = usageCount >= HARD_LIMIT && !isPro;
@@ -369,6 +412,7 @@ export default function App() {
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{isPro ? "✓ Proプラン利用中（無制限）" : `残り ${Math.max(0, HARD_LIMIT - usageCount)}/${HARD_LIMIT}回`}</span>
+          {isPro && <button onClick={openPortal} style={{fontSize:12,padding:"5px 12px",borderRadius:"var(--border-radius-md)"}}>💳 支払い・解約</button>}
           <button onClick={()=>setShowContact(!showContact)} style={{fontSize:13,padding:"7px 14px",borderRadius:"var(--border-radius-md)",fontWeight:500}}>📩 監修相談</button>
         </div>
       </div>
