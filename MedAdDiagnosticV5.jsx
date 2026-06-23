@@ -126,7 +126,7 @@ function extractPartialFields(s) {
   return null;
 }
 
-async function diagnose(text, matched, clientId) {
+async function diagnose(text, matched, clientId, entToken, usage) {
   const cLabel = CLIENTS.find(c=>c.id===clientId)?.label || "すべて";
   const ctx = matched.slice(0,10).map(r=>
     `- NG「${r.ng.slice(0,25)}」(${r.risk}) ${(r.comment||"").slice(0,50)}`
@@ -150,7 +150,11 @@ async function diagnose(text, matched, clientId) {
 
   const res = await fetch("/api/diagnose", {
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{
+      "Content-Type":"application/json",
+      "x-usage-count": String(usage ?? 0),
+      ...(entToken ? {"x-entitlement-token": entToken} : {})
+    },
     body: JSON.stringify({
       model:"claude-sonnet-4-6",
       max_tokens:2000,
@@ -159,6 +163,11 @@ async function diagnose(text, matched, clientId) {
     })
   });
 
+  if (res.status === 402) {
+    const e = new Error("無料診断の上限に達しました。プランにご登録ください。");
+    e.requireUpgrade = true;
+    throw e;
+  }
   if (!res.ok) throw new Error(`API応答エラー (${res.status})`);
   const data = await res.json();
   const raw  = data.content?.find(c=>c.type==="text")?.text || "";
@@ -187,7 +196,10 @@ export default function App() {
   });
   const [isPro, setIsPro] = useState(() => {
     if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("med_ad_pro") === "1";
+    return (
+      window.localStorage.getItem("med_ad_pro") === "1" &&
+      !!window.localStorage.getItem("med_ad_token")
+    );
   });
   const [checkoutLoading, setCheckoutLoading] = useState("");
   const [customerId, setCustomerId] = useState(() => {
@@ -215,8 +227,9 @@ export default function App() {
           body: JSON.stringify({ session_id: sessionId }),
         });
         const data = await r.json().catch(() => ({}));
-        if (r.ok && data.pro) {
+        if (r.ok && data.pro && data.token) {
           window.localStorage.setItem("med_ad_pro", "1");
+          window.localStorage.setItem("med_ad_token", data.token);
           setIsPro(true);
           if (data.customerId) {
             window.localStorage.setItem("med_ad_customer", data.customerId);
@@ -289,7 +302,8 @@ export default function App() {
         const m = matchRules(inputText);
         setHits(m);
         setStepMsg(`${m.length}件マッチ。AI診断中... ${attempt > 1 ? `(再試行${attempt})` : ""}`);
-        const ai = await diagnose(inputText, m, clientId);
+        const entToken = typeof window !== "undefined" ? (window.localStorage.getItem("med_ad_token") || "") : "";
+        const ai = await diagnose(inputText, m, clientId, entToken, usageCount);
         setResult(ai);
         setUsageCount(c => {
           const next = c + 1;
