@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import rulebookData from "./rulebook.json";
 
-// ルールブック v13 - 601件 + コスメ薬機法管理者DB 172件（rulebook.jsonから読み込み）
+// ルールブック v14 - 607件 + コスメ薬機法管理者DB 172件（rulebook.jsonから読み込み）
 const RB = rulebookData.RB;
 
 // 補完キーワード（早期検出）
@@ -13,7 +13,7 @@ const CS = rulebookData.CS || [];
 // ルール件数（rulebook.jsonから動的算出）
 const RULE_COUNT = RB.length;
 const CS_COUNT = CS.length;
-const RULE_VER = "v13";
+const RULE_VER = rulebookData.meta?.version || "v14";
 
 const CLIENTS = [
   {id:"all",  label:"すべて",           icon:"🔍", desc:"業種問わず診断"},
