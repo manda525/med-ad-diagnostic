@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import rulebookData from "./rulebook.json";
 
 // ルールブック v13 - 601件 + コスメ薬機法管理者DB 172件（rulebook.jsonから読み込み）
@@ -41,6 +41,12 @@ const LINE_LIMIT = 6;          // 4〜6回: 通常診断+LINE誘導
 const HARD_LIMIT = 6;          // 7回目以降: 診断停止+監修相談へ
 const LINE_URL = "https://lin.ee/7GlM6CT";  // ← LINE公式アカウント取得後に書き換え
 const CONTACT_EMAIL = "masa@med-ad-masa.com";
+
+// ===== サブスクプラン（Stripe / テストモード）=====
+const PLANS = [
+  { key: "individual", label: "個人プラン", price: "¥500", unit: "/月", note: "個人・小規模の方向け" },
+  { key: "corporate",  label: "法人プラン", price: "¥5,000", unit: "/月", note: "チーム・代理店向け" },
+];
 
 // マッチング
 function matchRules(text) {
@@ -125,7 +131,7 @@ function extractPartialFields(s) {
   return null;
 }
 
-async function diagnose(text, matched, clientId) {
+async function diagnose(text, matched, clientId, entToken, usage) {
   const cLabel = CLIENTS.find(c=>c.id===clientId)?.label || "すべて";
   const ctx = matched.slice(0,10).map(r=>
     `- NG「${r.ng.slice(0,25)}」(${r.risk}) ${(r.comment||"").slice(0,50)}`
@@ -151,7 +157,11 @@ async function diagnose(text, matched, clientId) {
 
   const res = await fetch("/api/diagnose", {
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{
+      "Content-Type":"application/json",
+      "x-usage-count": String(usage ?? 0),
+      ...(entToken ? {"x-entitlement-token": entToken} : {})
+    },
     body: JSON.stringify({
       model:"claude-sonnet-4-6",
       max_tokens:2000,
@@ -160,6 +170,11 @@ async function diagnose(text, matched, clientId) {
     })
   });
 
+  if (res.status === 402) {
+    const e = new Error("無料診断の上限に達しました。プランにご登録ください。");
+    e.requireUpgrade = true;
+    throw e;
+  }
   if (!res.ok) throw new Error(`API応答エラー (${res.status})`);
   const data = await res.json();
   const raw  = data.content?.find(c=>c.type==="text")?.text || "";
@@ -186,9 +201,97 @@ export default function App() {
     const saved = window.localStorage.getItem("med_ad_usage");
     return saved ? parseInt(saved, 10) : 0;
   });
+  const [isPro, setIsPro] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      window.localStorage.getItem("med_ad_pro") === "1" &&
+      !!window.localStorage.getItem("med_ad_token")
+    );
+  });
+  const [checkoutLoading, setCheckoutLoading] = useState("");
+  const [customerId, setCustomerId] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem("med_ad_customer") || "";
+  });
 
-  const isOverFreeLimit = usageCount >= FREE_LIMIT;
-  const isOverHardLimit = usageCount >= HARD_LIMIT;
+  // Stripe Checkout からの復帰を処理（?checkout=success → サーバーで検証 → Pro解放）
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("checkout");
+    if (!status) return;
+    const sessionId = params.get("session_id");
+    params.delete("checkout");
+    params.delete("session_id");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+    if (status !== "success" || !sessionId) return;
+    (async () => {
+      try {
+        const r = await fetch("/api/verify-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (r.ok && data.pro && data.token) {
+          window.localStorage.setItem("med_ad_pro", "1");
+          window.localStorage.setItem("med_ad_token", data.token);
+          setIsPro(true);
+          if (data.customerId) {
+            window.localStorage.setItem("med_ad_customer", data.customerId);
+            setCustomerId(data.customerId);
+          }
+        } else {
+          setErr("決済の確認ができませんでした。反映されない場合はお問い合わせください。");
+        }
+      } catch {
+        setErr("決済の確認中にエラーが発生しました。");
+      }
+    })();
+  }, []);
+
+  const startCheckout = useCallback(async (plan) => {
+    setErr("");
+    setCheckoutLoading(plan);
+    try {
+      const r = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.url && typeof window !== "undefined") {
+        window.location.href = data.url;
+        return;
+      }
+      throw new Error(data.error || "決済ページの作成に失敗しました");
+    } catch (e) {
+      setErr(e.message || "決済の開始に失敗しました");
+      setCheckoutLoading("");
+    }
+  }, []);
+
+  const openPortal = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    const cid = customerId || window.localStorage.getItem("med_ad_customer");
+    if (!cid) { setErr("お客様情報が見つかりません。"); return; }
+    try {
+      const r = await fetch("/api/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: cid }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.url) { window.location.href = data.url; return; }
+      throw new Error(data.error || "管理ページを開けませんでした");
+    } catch (e) {
+      setErr(e.message || "管理ページを開けませんでした");
+    }
+  }, [customerId]);
+
+  const isOverFreeLimit = usageCount >= FREE_LIMIT && !isPro;
+  const isOverHardLimit = usageCount >= HARD_LIMIT && !isPro;
 
   const run = useCallback(async (t) => {
     const inputText = t ?? text;
@@ -206,7 +309,8 @@ export default function App() {
         const m = matchRules(inputText);
         setHits(m);
         setStepMsg(`${m.length}件マッチ。AI診断中... ${attempt > 1 ? `(再試行${attempt})` : ""}`);
-        const ai = await diagnose(inputText, m, clientId);
+        const entToken = typeof window !== "undefined" ? (window.localStorage.getItem("med_ad_token") || "") : "";
+        const ai = await diagnose(inputText, m, clientId, entToken, usageCount);
         setResult(ai);
         setUsageCount(c => {
           const next = c + 1;
@@ -328,7 +432,8 @@ export default function App() {
           <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0}}>薬機法・景表法・医療広告GL・粧工連2020・コスメ薬機法管理者DB | ルール{RULE_VER}（{RULE_COUNT}+{CS_COUNT}件）| β版</p>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>残り {Math.max(0, HARD_LIMIT - usageCount)}/{HARD_LIMIT}回</span>
+          <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{isPro ? "✓ Proプラン利用中（無制限）" : `残り ${Math.max(0, HARD_LIMIT - usageCount)}/${HARD_LIMIT}回`}</span>
+          {isPro && <button onClick={openPortal} style={{fontSize:12,padding:"5px 12px",borderRadius:"var(--border-radius-md)"}}>💳 支払い・解約</button>}
           <button onClick={()=>setShowContact(!showContact)} style={{fontSize:13,padding:"7px 14px",borderRadius:"var(--border-radius-md)",fontWeight:500}}>📩 監修相談</button>
         </div>
       </div>
@@ -352,7 +457,18 @@ export default function App() {
       {isOverHardLimit && (
         <div style={{...C(12),background:"var(--color-background-warning)",border:"1px solid var(--color-border-warning)"}}>
           <p style={{fontSize:14,fontWeight:500,margin:"0 0 8px",color:"var(--color-text-warning)"}}>⏱️ 無料診断回数を使い切りました</p>
-          <p style={{fontSize:13,color:"var(--color-text-primary)",margin:"0 0 12px",lineHeight:1.7}}>引き続きご利用には、人による監修・コンサルティングサービスをご検討ください。LP全文レビューや薬機法申請サポート、継続監修契約など、専門家として対応します。</p>
+          <p style={{fontSize:13,color:"var(--color-text-primary)",margin:"0 0 12px",lineHeight:1.7}}>サブスクプランに登録すると、引き続き診断ツールをご利用いただけます（現在テスト決済・いつでも解約可能）。</p>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:14}}>
+            {PLANS.map((p) => (
+              <button key={p.key} type="button" onClick={() => startCheckout(p.key)} disabled={checkoutLoading !== ""}
+                style={{flex:"1 1 200px",textAlign:"left",padding:"12px 16px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",border:"0.5px solid var(--color-border-info)",cursor:checkoutLoading!==""?"wait":"pointer",opacity:checkoutLoading!==""&&checkoutLoading!==p.key?0.5:1}}>
+                <span style={{display:"block",fontSize:13,fontWeight:500,color:"var(--color-text-primary)"}}>{p.label}</span>
+                <span style={{display:"block",fontSize:18,fontWeight:600,color:"var(--color-text-info)",margin:"2px 0"}}>{p.price}<span style={{fontSize:12,fontWeight:400}}>{p.unit}</span></span>
+                <span style={{display:"block",fontSize:11,color:"var(--color-text-tertiary)"}}>{checkoutLoading===p.key?"決済ページへ移動中...":p.note}</span>
+              </button>
+            ))}
+          </div>
+          <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:"0 0 8px"}}>または、人による監修・コンサルティングをご希望の方：</p>
           <a href={`mailto:${CONTACT_EMAIL}?subject=医療広告診断・監修相談`}
             style={{display:"inline-block",fontSize:14,padding:"10px 24px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-info)",color:"var(--color-text-info)",border:"0.5px solid var(--color-border-info)",textDecoration:"none",fontWeight:500}}>📩 監修相談する</a>
         </div>
