@@ -18,6 +18,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid plan" });
   }
 
+  // 安全ガード：本番(production)以外のデプロイ（プレビュー等）では live 鍵での本番決済をブロック（誤課金防止）。
+  // その環境にテストモードの鍵(sk_test_)を設定すれば、テスト決済は通常どおり動作する。
+  const sk = process.env.STRIPE_SECRET_KEY || "";
+  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production" && sk.startsWith("sk_live")) {
+    return res.status(403).json({
+      error: "プレビュー環境では本番決済を無効化しています（誤課金防止）。",
+    });
+  }
+
   try {
     const stripe = getStripe();
     const baseUrl = getBaseUrl(req);
