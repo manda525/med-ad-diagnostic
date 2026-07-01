@@ -1,15 +1,19 @@
 import { useState, useCallback, useEffect } from "react";
 import rulebookData from "./rulebook.json";
 
-// ルールブック v10 - 491件（rulebook.jsonから読み込み）
+// ルールブック v14 - 607件 + コスメ薬機法管理者DB 172件（rulebook.jsonから読み込み）
 const RB = rulebookData.RB;
 
-// 補完キーワード（rulebook.jsonから読み込み）
-const EX = rulebookData.EX;
+// 補完キーワード（早期検出）
+const EX = rulebookData.EX || [];
 
-// ルール件数（rulebook.jsonから動的算出。ラベルのstale化を防ぐ）
+// コスメ薬機法管理者DB（判定ケース）
+const CS = rulebookData.CS || [];
+
+// ルール件数（rulebook.jsonから動的算出）
 const RULE_COUNT = RB.length;
-const RULE_VER = "v10";
+const CS_COUNT = CS.length;
+const RULE_VER = rulebookData.meta?.version || "v14";
 
 const CLIENTS = [
   {id:"all",  label:"すべて",           icon:"🔍", desc:"業種問わず診断"},
@@ -50,8 +54,9 @@ function matchRules(text) {
   const seen = new Set();
   const norm = text.toLowerCase().replace(/[　\s]/g, "");
   const allRules = [
-    ...RB.map(r => ({id:r[0],ng:r[1],risk:r[2],genre:r[3],comment:r[4],ok:r[5],law:r[6],jcia:r[7]})),
-    ...EX.map(r  => ({id:r[0],ng:r[1],risk:r[2],genre:r[3],comment:r[4],ok:r[5],law:r[6],jcia:r[7]})),
+    ...RB.map(r => ({id:r[0],ng:r[1],risk:r[2],genre:r[3],comment:r[4],ok:r[5],law:r[6],jcia:r[7],src:"RB"})),
+    ...EX.map(r => ({id:r[0],ng:r[1],risk:r[2],genre:r[3],comment:r[4],ok:r[5],law:r[6],jcia:r[7],src:"EX"})),
+    ...CS.map(r => ({id:r[0],ng:r[1],risk:r[2],genre:r[3],comment:r[4],ok:r[5],law:r[6],jcia:r[7],src:"CS"})),
   ];
   for (const rule of allRules) {
     if (seen.has(rule.id)) continue;
@@ -132,7 +137,9 @@ async function diagnose(text, matched, clientId, entToken, usage) {
     `- NG「${r.ng.slice(0,25)}」(${r.risk}) ${(r.comment||"").slice(0,50)}`
   ).join("\n");
 
-  const systemPrompt = `あなたは薬剤師資格を持つ医療広告コンプライアンス専門家。薬機法・景表法・医療広告GL・粧工連ガイドライン2020年版に精通。クライアント:${cLabel}
+  const systemPrompt = `あなたは薬剤師・薬機法管理者・コスメ薬機法管理者の資格を持つ医療広告コンプライアンス専門家。薬機法・景表法・健康増進法・医療広告GL・粧工連ガイドライン2020年版、化粧品の効能効果56項目の範囲、化粧品該当性（標榜で決まる）、浸透表現は角質層まで等の判定軸に精通。クライアント:${cLabel}
+
+【判定の視点】化粧品は効能56項目の範囲内か／医薬部外品の承認効能か／健康食品は身体の具体的変化・特定部位の機能変化を標榜していないか／疾病の治療・予防の暗示はないか／安全性や効果の保証・最大級表現はないか、を厳密に見る。
 
 【最重要】必ず有効なJSONのみで応答する。JSON以外の文字（前置き・後置き・コードブロック）は一切含めない。値の中には改行を含めず、ダブルクォートを使う場合は必ずバックスラッシュでエスケープする。
 
@@ -189,6 +196,7 @@ export default function App() {
   const [result,    setResult]    = useState(null);
   const [err,       setErr]       = useState("");
   const [showContact, setShowContact] = useState(false);
+  const [showStory, setShowStory] = useState(false);
   const [usageCount, setUsageCount] = useState(() => {
     if (typeof window === "undefined") return 0;
     const saved = window.localStorage.getItem("med_ad_usage");
@@ -379,7 +387,7 @@ export default function App() {
         {/* 3つの価値 */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:12,marginBottom:18}}>
           {[
-            {n:RULE_COUNT+"件", t:"現場ルールで照合", d:"案件で見つけたNG表現を反映し続ける成長型ルールブック"},
+            {n:(RULE_COUNT+CS_COUNT)+"件", t:"現場ルールで照合", d:"薬機法・コスメ薬機法管理者DBの判定ケースを反映した成長型ルールブック"},
             {n:"3観点", t:"横断チェック", d:"薬機法・景表法・医療広告GLを一度に確認"},
             {n:"修正案", t:"NG→OKを併記", d:"指摘だけで終わらせず、書き換え方向まで提示"},
           ].map((v,i)=>(
@@ -400,11 +408,17 @@ export default function App() {
           borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:14,
           display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14,flexWrap:"wrap"
         }}>
-          <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0,lineHeight:1.7,maxWidth:420}}>
-            制作：医療広告コンサル まさ（薬剤師／薬機法管理者／景表法第1級）。
-            企業内薬剤師として健康食品分野に携わりながら、広告代理店・メーカー・医療機関の案件に向き合う中で
-            溜まった判断軸をツール化しました。
-          </p>
+          <div style={{maxWidth:420}}>
+            <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0,lineHeight:1.7}}>
+              制作：医療広告コンサル まさ（薬剤師／薬機法管理者／景表法第1級）。
+              企業内薬剤師として健康食品分野に携わりながら、広告代理店・メーカー・医療機関の案件に向き合う中で
+              溜まった判断軸をツール化しました。
+            </p>
+            <button type="button" onClick={()=>setShowStory(!showStory)}
+              style={{marginTop:8,fontSize:12,padding:"4px 12px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",color:"var(--color-text-info)",border:"0.5px solid var(--color-border-info)",cursor:"pointer",fontWeight:500}}>
+              {showStory ? "▲ 閉じる" : "▶ なぜ作ったか（開発の経緯）"}
+            </button>
+          </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
               style={{fontSize:12,padding:"6px 14px",borderRadius:"var(--border-radius-md)",background:"#06C755",color:"#fff",border:"0.5px solid #06C755",textDecoration:"none",fontWeight:500}}>💬 LINEで相談・更新を受け取る</a>
@@ -416,13 +430,23 @@ export default function App() {
               style={{fontSize:12,padding:"6px 14px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",color:"var(--color-text-primary)",border:"0.5px solid var(--color-border-tertiary)",textDecoration:"none"}}>実績を見る</a>
           </div>
         </div>
+
+        {showStory && (
+          <div style={{...C(12),marginTop:12,background:"var(--color-background-info)",border:"0.5px solid var(--color-border-info)"}}>
+            <p style={{fontSize:13,color:"var(--color-text-primary)",margin:0,lineHeight:1.9}}>
+              案件が増え、私一人で広告チェックする速度に限界が来ていました。そこで、現場で積み上げた判断軸そのものをツールにしました。広告違反で本当に重いのは、課徴金より信頼の毀損だと考えています。攻めの表現だけでなく、守りも固める。その最初の一手として、日々更新されるこの相棒を作りました。
+            </p>
+            <a href="https://note.com/med_ad_consult/n/n4bc8e2bdbdc3" target="_blank" rel="noopener noreferrer"
+              style={{display:"inline-block",marginTop:10,fontSize:12,color:"var(--color-text-info)",textDecoration:"none",fontWeight:500}}>詳しくはnoteへ →</a>
+          </div>
+        )}
       </div>
 
       {/* ヘッダー */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem",gap:12}}>
         <div>
           <h2 style={{fontSize:18,fontWeight:500,margin:"0 0 3px",color:"var(--color-text-primary)"}}>医療広告リスク診断ツール</h2>
-          <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0}}>薬機法・景表法・医療広告GL・粧工連2020 | ルール{RULE_VER}（{RULE_COUNT}件）| β版</p>
+          <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0}}>薬機法・景表法・医療広告GL・粧工連2020・コスメ薬機法管理者DB | ルール{RULE_VER}（{RULE_COUNT}+{CS_COUNT}件）| β版</p>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{isPro ? "✓ Proプラン利用中（無制限）" : `残り ${Math.max(0, HARD_LIMIT - usageCount)}/${HARD_LIMIT}回`}</span>
@@ -629,7 +653,7 @@ export default function App() {
 
           {hits.length>0&&(
             <div style={{background:"var(--color-background-secondary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:"var(--border-radius-lg)",padding:"1rem 1.25rem",marginBottom:12}}>
-              <p style={{fontSize:13,fontWeight:500,margin:"0 0 10px",color:"var(--color-text-primary)"}}>📚 ルールブック{RULE_VER} 照合結果 ({hits.length}件)</p>
+              <p style={{fontSize:13,fontWeight:500,margin:"0 0 10px",color:"var(--color-text-primary)"}}>📚 ルールブック{RULE_VER}・コスメCS 照合結果 ({hits.length}件)</p>
               {hits.slice(0,8).map((m,i)=>{
                 const r=riskLv(m.risk);
                 return(
@@ -640,6 +664,7 @@ export default function App() {
                         <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:2}}>
                           <span style={{fontSize:13,fontWeight:500,color:"var(--color-text-primary)"}}>{m.ng.slice(0,30)}</span>
                           <span style={{fontSize:10,color:"var(--color-text-secondary)",background:"var(--color-background-secondary)",padding:"1px 6px",borderRadius:4}}>{m.genre}</span>
+                          {m.src==="CS" && <span style={{fontSize:10,color:"var(--color-text-success)",background:"var(--color-background-success)",padding:"1px 6px",borderRadius:4,fontWeight:500}}>コスメCS</span>}
                           {m.jcia && <span style={{fontSize:10,color:"var(--color-text-info)",background:"var(--color-background-info)",padding:"1px 6px",borderRadius:4,fontWeight:500}}>粧工連 {m.jcia}</span>}
                         </div>
                         {m.comment&&<p style={{fontSize:12,color:"var(--color-text-secondary)",margin:"0 0 2px",lineHeight:1.5}}>{m.comment}</p>}
