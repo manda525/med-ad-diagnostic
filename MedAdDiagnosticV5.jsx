@@ -458,7 +458,8 @@ export default function App() {
       {showContact && (
         <div style={{...C(12),background:"var(--color-background-info)",border:"0.5px solid var(--color-border-info)"}}>
           <p style={{fontSize:14,fontWeight:500,margin:"0 0 8px",color:"var(--color-text-info)"}}>広告監修・コンサルティングのご相談</p>
-          <p style={{fontSize:13,color:"var(--color-text-primary)",margin:"0 0 12px",lineHeight:1.7}}>LP全文精査・薬機法申請サポート・継続監修契約など、薬剤師×医療広告コンプライアンス専門家として対応します。</p>
+          <p style={{fontSize:13,color:"var(--color-text-primary)",margin:"0 0 10px",lineHeight:1.7}}>LP全文精査・薬機法申請サポート・継続監修契約など、薬剤師×医療広告コンプライアンス専門家として対応します。</p>
+          <p style={{margin:"0 0 12px"}}><a href="/consult" style={{fontSize:13,color:"var(--color-text-info)",textDecoration:"none",fontWeight:500}}>監修サービスの詳細を見る →</a></p>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
             <a href={`mailto:${CONTACT_EMAIL}?subject=医療広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`}
               style={{fontSize:13,padding:"8px 18px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",color:"var(--color-text-info)",border:"0.5px solid var(--color-border-info)",textDecoration:"none",fontWeight:500}}>📧 メールで相談</a>
