@@ -196,6 +196,7 @@ export default function App() {
   const [result,    setResult]    = useState(null);
   const [err,       setErr]       = useState("");
   const [showContact, setShowContact] = useState(false);
+  const [showStory, setShowStory] = useState(false);
   const [usageCount, setUsageCount] = useState(() => {
     if (typeof window === "undefined") return 0;
     const saved = window.localStorage.getItem("med_ad_usage");
@@ -407,11 +408,17 @@ export default function App() {
           borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:14,
           display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14,flexWrap:"wrap"
         }}>
-          <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0,lineHeight:1.7,maxWidth:420}}>
-            制作：医療広告コンサル まさ（薬剤師／薬機法管理者／景表法第1級）。
-            企業内薬剤師として健康食品分野に携わりながら、広告代理店・メーカー・医療機関の案件に向き合う中で
-            溜まった判断軸をツール化しました。
-          </p>
+          <div style={{maxWidth:420}}>
+            <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0,lineHeight:1.7}}>
+              制作：医療広告コンサル まさ（薬剤師／薬機法管理者／景表法第1級）。
+              企業内薬剤師として健康食品分野に携わりながら、広告代理店・メーカー・医療機関の案件に向き合う中で
+              溜まった判断軸をツール化しました。
+            </p>
+            <button type="button" onClick={()=>setShowStory(!showStory)}
+              style={{marginTop:8,fontSize:12,padding:"4px 12px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",color:"var(--color-text-info)",border:"0.5px solid var(--color-border-info)",cursor:"pointer",fontWeight:500}}>
+              {showStory ? "▲ 閉じる" : "▶ なぜ作ったか（開発の経緯）"}
+            </button>
+          </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
               style={{fontSize:12,padding:"6px 14px",borderRadius:"var(--border-radius-md)",background:"#06C755",color:"#fff",border:"0.5px solid #06C755",textDecoration:"none",fontWeight:500}}>💬 LINEで相談・更新を受け取る</a>
@@ -423,6 +430,16 @@ export default function App() {
               style={{fontSize:12,padding:"6px 14px",borderRadius:"var(--border-radius-md)",background:"var(--color-background-primary)",color:"var(--color-text-primary)",border:"0.5px solid var(--color-border-tertiary)",textDecoration:"none"}}>実績を見る</a>
           </div>
         </div>
+
+        {showStory && (
+          <div style={{...C(12),marginTop:12,background:"var(--color-background-info)",border:"0.5px solid var(--color-border-info)"}}>
+            <p style={{fontSize:13,color:"var(--color-text-primary)",margin:0,lineHeight:1.9}}>
+              案件が増え、私一人で広告チェックする速度に限界が来ていました。そこで、現場で積み上げた判断軸そのものをツールにしました。広告違反で本当に重いのは、課徴金より信頼の毀損だと考えています。攻めの表現だけでなく、守りも固める。その最初の一手として、日々更新されるこの相棒を作りました。
+            </p>
+            <a href="https://note.com/med_ad_consult/n/n4bc8e2bdbdc3" target="_blank" rel="noopener noreferrer"
+              style={{display:"inline-block",marginTop:10,fontSize:12,color:"var(--color-text-info)",textDecoration:"none",fontWeight:500}}>詳しくはnoteへ →</a>
+          </div>
+        )}
       </div>
 
       {/* ヘッダー */}
