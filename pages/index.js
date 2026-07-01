@@ -39,6 +39,9 @@ export default function Home() {
         <App />
       </main>
       <footer style={{textAlign:"center",padding:"32px 16px",fontSize:13,color:"var(--color-text-secondary)",borderTop:"0.5px solid var(--color-border-tertiary)",marginTop:24}}>
+        <div style={{marginBottom:10}}>
+          <a href="/consult" style={{color:"var(--color-text-info)",margin:"0 8px",fontWeight:500}}>監修サービスのご案内</a>
+        </div>
         <a href="/tokushoho" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>特定商取引法に基づく表記</a>
         ・
         <a href="/terms" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>利用規約</a>
