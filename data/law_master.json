@@ -1,0 +1,489 @@
+{
+  "meta": {
+    "version": "v1",
+    "created": "2026-07-07",
+    "note": "法令マスター。docs/law_master.md を構造化。各ルールは law_ids で本マスターに紐づく。一次ソース主義。",
+    "node_count": 25
+  },
+  "laws": [
+    {
+      "id": "L-YAKKI-66",
+      "category": "薬機法",
+      "title": "虚偽・誇大広告の禁止",
+      "article": "医薬品医療機器等法 第66条",
+      "authority": "厚生労働省",
+      "summary": "何人も、医薬品・医薬部外品・化粧品・医療機器等の名称・製造方法・効能効果・性能について、明示的・暗示的を問わず虚偽又は誇大な広告をしてはならない。",
+      "key_points": [
+        "「何人も」規制＝製造販売業者だけでなく代理店・アフィリエイター・インフルエンサー・ライター個人も対象（罰則：2年以下の懲役 or 200万円以下の罰金）",
+        "暗示も対象＝体験談・グラフ・写真・イメージによる効能の暗示もNG",
+        "健康食品・雑品が医薬品的効能（疾病の治療・予防、身体組織の機能増強）を標榜すると未承認医薬品広告（68条）と一体で違反",
+        "化粧品は効能56項目の範囲外の標榜が本条違反になり得る"
+      ],
+      "industries": ["E", "A", "A2", "F", "G"],
+      "media": [],
+      "source_urls": ["https://www.hokeniryo.metro.tokyo.lg.jp/anzen/iyaku/koukokukisei/bassui", "https://www.pref.kyoto.jp/yakumu/koukoku/yakihoujyoubun.html"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-YAKKI-68",
+      "category": "薬機法",
+      "title": "未承認医薬品等の広告禁止",
+      "article": "薬機法 第68条",
+      "authority": "厚生労働省",
+      "summary": "何人も、承認・認証を受けていない医薬品・医療機器・再生医療等製品について、名称・製造方法・効能効果・性能に関する広告をしてはならない。",
+      "key_points": [
+        "健康食品・サプリで医薬品的効能を暗示＝実質68条違反の典型構図",
+        "承認前の医療機器・医薬品の予告的広告もNG",
+        "成分本質・起源・製法・広告内容から総合判断される"
+      ],
+      "industries": ["E", "A", "F", "G"],
+      "media": [],
+      "source_urls": ["https://www.pref.kyoto.jp/yakumu/koukoku/yakihoujyoubun.html"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-YAKKI-2",
+      "category": "薬機法",
+      "title": "化粧品・医薬品等の該当性（定義）",
+      "article": "薬機法 第2条（第3項＝化粧品の定義）",
+      "authority": "厚生労働省",
+      "summary": "規制はモノの実体でなく標榜（広告表現）に貼り付く。人体への効能を標榜すれば雑品でも化粧品・医薬品該当性が生じる。",
+      "key_points": [
+        "雑品（例：洗濯石けん）で人体表現（お肌にやさしい等）をすると化粧品該当性が生じ承認・届出の問題になる",
+        "SNS・口コミへの人体表現の漏れも該当性判断の対象"
+      ],
+      "industries": ["E", "F"],
+      "media": [],
+      "source_urls": ["https://laws.e-gov.go.jp/law/335AC0000000145"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-TEKISEI",
+      "category": "薬機法運用",
+      "title": "医薬品等適正広告基準",
+      "article": "昭和55年厚生省薬務局長通知（最終改正 平成29年）",
+      "authority": "厚生労働省",
+      "summary": "医薬品・医薬部外品・化粧品等の広告の適正化基準。効能効果の表現範囲、安全性の保証、最大級表現、医療関係者の推薦等を規律。",
+      "key_points": [
+        "効能効果・安全性の保証表現の禁止（「安心」「安全」「副作用なし」等）",
+        "最大級表現（最高・No.1・世界一）の禁止",
+        "医薬関係者・病院等の推薦表現の原則禁止",
+        "使用体験談は効能効果の保証にわたるものNG"
+      ],
+      "industries": ["E", "A2", "F"],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/file/06-Seisakujouhou-11120000-Iyakushokuhinkyoku/0000179263.pdf"],
+      "source_type": "運用基準",
+      "verified": true
+    },
+    {
+      "id": "L-KEIHYO-5",
+      "category": "景品表示法",
+      "title": "不当表示の禁止（優良誤認・有利誤認・指定告示）",
+      "article": "景表法 第5条",
+      "authority": "消費者庁",
+      "summary": "①優良誤認：品質・内容が実際／競争事業者より著しく優良と誤認させる表示 ②有利誤認：価格・取引条件が著しく有利と誤認させる表示 ③指定告示（ステマ等）の禁止。",
+      "key_points": [
+        "全業種横断の基幹法。効果・品質の誇張、No.1表示、打消し表示の不備、二重価格が典型",
+        "体験談・ビフォーアフターも実際以上の効果を示せば優良誤認",
+        "違反時は措置命令・課徴金（売上額の3%）"
+      ],
+      "industries": [],
+      "media": [],
+      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/fair_labeling/representation_regulation/", "https://laws.e-gov.go.jp/law/337AC0000000134"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-KEIHYO-7",
+      "category": "景品表示法",
+      "title": "不実証広告規制（合理的根拠の提出要求）",
+      "article": "景表法 第7条第2項（第8条第3項）",
+      "authority": "消費者庁",
+      "summary": "消費者庁長官は効果・性能表示の裏付けとなる合理的根拠資料の提出を求められる。未提出・不十分なら不当表示とみなされる。",
+      "key_points": [
+        "合理的根拠の2要件：①客観的に実証された内容 ②表示された効果と実証内容が適切に対応",
+        "「言えるか」ではなく「根拠を示せるか」で判定する",
+        "痩身・育毛・空間除菌・学習効果など効果訴求全般で発動実績"
+      ],
+      "industries": [],
+      "media": [],
+      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/fair_labeling/representation_regulation/misleading_representation/not_demonstrated_ad"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-STEMA",
+      "category": "景品表示法",
+      "title": "ステルスマーケティング告示",
+      "article": "景表法 第5条第3号・令和5年内閣府告示第19号（2023-10-01施行）",
+      "authority": "消費者庁",
+      "summary": "事業者の表示であることを一般消費者が判別困難な表示（広告と分からない広告）の禁止。",
+      "key_points": [
+        "①事業者の表示に該当し ②一般消費者が事業者の表示と判別困難、の両方で違反",
+        "インフルエンサー投稿・アフィリ記事は「PR」「広告」等の明示が必要",
+        "第三者・一般消費者を装った投稿、レビューの偽装はNG",
+        "責任を負うのは広告主（事業者）"
+      ],
+      "industries": [],
+      "media": ["sns", "article", "video", "review"],
+      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/fair_labeling/stealth_marketing/"],
+      "source_type": "告示",
+      "verified": true
+    },
+    {
+      "id": "L-KENZO-65",
+      "category": "健康増進法",
+      "title": "誇大表示の禁止（食品の健康保持増進効果）",
+      "article": "健康増進法 第65条第1項",
+      "authority": "消費者庁",
+      "summary": "何人も、食品の健康保持増進効果等について、著しく事実に相違する表示・著しく人を誤認させる表示をしてはならない。",
+      "key_points": [
+        "錠剤・カプセルに限らず野菜・果物・調理品等の一般食品も対象",
+        "趣旨＝誇大広告を信じて適切な診療機会を失うことの防止",
+        "「痩せる」「若返る」「病気が治る」等の健康保持増進効果の誇大表示が典型"
+      ],
+      "industries": ["E"],
+      "media": [],
+      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-MED-AD",
+      "category": "医療法",
+      "title": "医療広告ガイドライン",
+      "article": "医療法・医療広告ガイドライン（2018-06-01施行）",
+      "authority": "厚生労働省",
+      "summary": "医業・歯科医業・病院・診療所の広告規制。ウェブサイトも対象。広告可能事項の限定＋虚偽・誇大・比較優良・体験談・誤認ビフォーアフターの禁止。",
+      "key_points": [
+        "患者の体験談は広告禁止（限定解除でも不可）",
+        "術前術後（ビフォーアフター）写真は誤認のおそれがあるもの禁止。詳細な説明（治療内容・費用・リスク副作用）を付せば限定解除下で可",
+        "限定解除4要件：①患者が自ら求めて入手する情報（ウェブ等）②問い合わせ先の記載 ③自由診療の通常必要とされる治療内容・費用 ④主なリスク・副作用",
+        "比較優良（日本一・最高峰・有名人も来院）NG、「絶対安全」「必ず治る」NG",
+        "広告該当性＝①誘引性 ②特定性（バナー・リスティングは広告、学術記事は非広告になり得る）"
+      ],
+      "industries": ["A", "A2"],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/kokokukisei/index.html", "https://www.mhlw.go.jp/content/001439423.pdf"],
+      "source_type": "GL",
+      "verified": true
+    },
+    {
+      "id": "L-MID",
+      "category": "医療法",
+      "title": "助産所の広告・名称・業務制限",
+      "article": "医療法 第2条・第3条・第19条",
+      "authority": "厚生労働省",
+      "summary": "助産所の名称独占（第3条）、嘱託医師・嘱託医療機関の確保（第19条）。広告は医療広告GLに準拠。業務は正常分娩の介助と保健指導に限られ医行為は不可。",
+      "key_points": [
+        "「病院」「診療所」「クリニック」を名乗れない。助産師の業務の場でないものは「助産所」も名乗れない",
+        "医行為（医療・診療・投薬）の実施・暗示はNG。異常時は嘱託医・嘱託医療機関へ",
+        "広告可能：名称・所在地・管理者氏名・業務時間・従事助産師情報・嘱託医/嘱託医療機関 等"
+      ],
+      "industries": ["A2"],
+      "media": [],
+      "source_urls": ["https://laws.e-gov.go.jp/law/340AC0000000141"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-PHARM",
+      "category": "薬機法",
+      "title": "薬局・医薬品販売の広告",
+      "article": "薬機法（66/68条＋医薬品等適正広告基準）",
+      "authority": "厚生労働省",
+      "summary": "薬局・ドラッグストアの医薬品広告。要指導/一般用医薬品の広告は承認範囲内の効能効果に限る。",
+      "key_points": [
+        "承認された効能効果の範囲を超える標榜NG",
+        "L-YAKKI-66/68・L-TEKISEI がそのまま適用される"
+      ],
+      "industries": ["A2"],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/file/06-Seisakujouhou-11120000-Iyakushokuhinkyoku/0000179263.pdf"],
+      "source_type": "法律",
+      "verified": false
+    },
+    {
+      "id": "L-JUDO-24",
+      "category": "柔道整復師法",
+      "title": "柔道整復（整骨院・接骨院）の広告制限",
+      "article": "柔道整復師法 第24条",
+      "authority": "厚生労働省",
+      "summary": "広告できる事項の限定列挙。氏名・住所、施術所名称・電話・所在地、施術日時、大臣指定事項（ほねつぎ／療養費支給申請可の旨／予約・休日夜間・出張施術／駐車設備）のみ。",
+      "key_points": [
+        "「腰痛・肩こり・膝の痛み」等の症状名は広告不可",
+        "「マッサージ」「整体」の文言も広告不可",
+        "「〇〇が治る」「交通事故治療」等の効能・適応症は原則NG",
+        "療養費（保険適用）は脱臼・骨折は医師同意が必要な旨の明示が条件。保険適用範囲の誤認NG",
+        "罰則：30万円以下の罰金（第30条）",
+        "あはき・柔整広告ガイドライン（令和7年2月18日付）が運用指針"
+      ],
+      "industries": ["B"],
+      "industries_sub": ["judo"],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/content/10800000/001412674.pdf", "https://www.mhlw.go.jp/content/10800000/001412682.pdf"],
+      "source_type": "法律",
+      "last_revised": "2025-02-18",
+      "verified": true
+    },
+    {
+      "id": "L-AHAKI-7",
+      "category": "あはき法",
+      "title": "あん摩マッサージ指圧・はり・きゅうの広告制限",
+      "article": "あはき法 第7条",
+      "authority": "厚生労働省",
+      "summary": "広告できる事項の限定列挙。施術者である旨・氏名住所、業務の種類、施術所名称・電話・所在地、施術日時、大臣指定事項（もみりょうじ／小児鍼／開設届出済の旨／療養費支給申請可／予約・休日夜間・出張／駐車設備）のみ。",
+      "key_points": [
+        "適応症・効能効果の広告は原則不可",
+        "「WHO認可」等の権威づけ表現に注意",
+        "療養費支給申請可の旨は医師同意が必要な旨の明示が条件",
+        "あはき・柔整広告ガイドライン（令和7年更新）が運用指針"
+      ],
+      "industries": ["B"],
+      "industries_sub": ["ahaki"],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/content/10800000/001412674.pdf", "https://laws.e-gov.go.jp/law/402M50000100019"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-SEITAI",
+      "category": "医業類似行為",
+      "title": "整体・カイロ・リラク等（無資格）の表現制限",
+      "article": "医師法・医療法の誤認防止＋景表法（法的資格制度なし）",
+      "authority": "消費者庁・厚生労働省",
+      "summary": "整体・カイロプラクティック・リラクゼーションは法的資格のない医業類似行為。医療・国家資格施術と誤認させる表現が禁止される。",
+      "key_points": [
+        "「治療」「治す」「診療」「診断」「投薬」等の医療を連想させる語はNG",
+        "「医学的」「効果を保証」NG。国家資格施術所（整骨院・鍼灸院）や医療機関と誤認させる表示NG",
+        "掲載すべきでない事項：①虚偽 ②客観的事実と証明できないもの ③比較優良 ④過度に利用を煽る表現",
+        "効果・改善の断定は景表法の優良誤認・不実証広告規制で捕捉される",
+        "「骨盤矯正」「猫背矯正」等も効果の実証根拠が問われる"
+      ],
+      "industries": ["C"],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/content/10800000/001412674.pdf", "https://www.meti.go.jp/policy/mono_info_service/healthcare/downloadfiles/relaxationguideline.pdf"],
+      "source_type": "GL",
+      "verified": true
+    },
+    {
+      "id": "L-TOKUSHOHO",
+      "category": "特定商取引法",
+      "title": "特定継続的役務提供（エステ・美容医療等）",
+      "article": "特定商取引法（特定継続的役務提供）",
+      "authority": "消費者庁",
+      "summary": "エステ（1か月超かつ5万円超）・美容医療等7役務が対象。概要書面・契約書面の交付義務、誇大広告の禁止、クーリングオフ8日、中途解約権。",
+      "key_points": [
+        "エステの適用閾値：期間1か月超かつ総額5万円超",
+        "契約前に概要書面・契約後に契約書面の交付義務",
+        "クーリングオフ8日間、期間経過後も理由不問で中途解約可（損害賠償上限＝エステは2万円 or 残額10%の低い方）",
+        "誇大広告の禁止。解約条件を不利に誤認させる表示NG"
+      ],
+      "industries": ["D", "A"],
+      "media": ["lp", "hp", "print", "mail"],
+      "source_urls": ["https://www.no-trouble.caa.go.jp/what/continuousservices/"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-COSME-56",
+      "category": "薬機法",
+      "title": "化粧品の効能効果56項目・医薬部外品",
+      "article": "平成23年7月21日 薬食発第721001号",
+      "authority": "厚生労働省",
+      "summary": "化粧品が標榜できる効能効果は通知の56項目に限定。医薬部外品は承認された効能（例：メラニンの生成を抑え、しみ・そばかすを防ぐ）まで。",
+      "key_points": [
+        "56項目の範囲外（シミが消える・シワがなくなる・アトピー改善等）はNG",
+        "No.56「乾燥による小ジワを目立たなくする」は効能評価試験済みの場合のみ",
+        "浸透表現は「角質層まで」が限界",
+        "「肌」「皮膚」の使い分け可、「補い保つ」は「補う」「保つ」単独でも可",
+        "医薬部外品（薬用）は承認効能の範囲内で化粧品より広い表現が可能"
+      ],
+      "industries": ["E"],
+      "industries_sub": ["cosme", "quasi"],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/web/t_doc?dataId=00tb7518&dataType=1"],
+      "source_type": "政省令",
+      "verified": true
+    },
+    {
+      "id": "L-JCIA",
+      "category": "自主基準",
+      "title": "化粧品等の適正広告ガイドライン（2020年版）",
+      "article": "日本化粧品工業連合会（現・日本化粧品工業会）2020年版",
+      "authority": "日本化粧品工業会",
+      "summary": "化粧品業界の自主基準。56項目の運用、体験談・最大級表現・比較広告・データ使用等の実務指針。",
+      "key_points": [
+        "メーキャップ効果（物理的効果）と薬理的効果の区別を明確に",
+        "使用前後写真はメーキャップ効果等の範囲でのみ可",
+        "「アンチエイジング」は年齢に応じたお手入れの意味でのみ可"
+      ],
+      "industries": ["E", "F"],
+      "industries_sub": ["cosme", "quasi"],
+      "media": [],
+      "source_urls": ["https://www.jcia.org/user/common/download/business/advertising/JCIA20200615_ADguide.pdf"],
+      "source_type": "自主基準",
+      "verified": true
+    },
+    {
+      "id": "L-KINOSEI",
+      "category": "食品表示",
+      "title": "機能性表示食品制度",
+      "article": "食品表示法・機能性表示食品の届出等に関するガイドライン",
+      "authority": "消費者庁",
+      "summary": "届出した機能性の範囲でのみ表示可。疾病に罹患していない者の健康維持・増進に役立つ旨に限られ、疾病の治療・予防効果の暗示は禁止。",
+      "key_points": [
+        "届出表現の範囲を超える標榜NG",
+        "疾病の治療・予防の暗示NG（糖尿病・高血圧・花粉症・風邪予防等の例示あり）",
+        "「診断」「予防」「治療」「処置」等の医学的表現は使用不可",
+        "対象は疾病非罹患者（未成年・妊産婦・授乳婦を除く）",
+        "トクホ（個別許可制）との混同表示NG"
+      ],
+      "industries": ["E"],
+      "industries_sub": ["supp", "func"],
+      "media": [],
+      "source_urls": ["https://www.caa.go.jp/policies/policy/food_labeling/foods_with_function_claims"],
+      "source_type": "GL",
+      "verified": true
+    },
+    {
+      "id": "L-AFFILI",
+      "category": "景品表示法",
+      "title": "アフィリエイト広告の表示主体責任",
+      "article": "アフィリエイト広告等に関する検討会報告書（令和4年2月15日）・管理措置指針（2022改正）",
+      "authority": "消費者庁",
+      "summary": "アフィリエイト広告は表示内容の決定に関与した広告主が景表法上の表示主体として責任を負う。広告主には管理措置が求められる。",
+      "key_points": [
+        "広告主の管理措置：①ASP/アフィリエイターとの契約で役割・責任を明記 ②表示根拠の確認・記録保存 ③事業者の表示であることの明示",
+        "アフィリエイター自身も薬機法66条（何人も規制）の対象",
+        "ステマ告示と併走（PR明示）"
+      ],
+      "industries": ["F"],
+      "media": ["article", "sns", "lp", "video"],
+      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/meeting_materials/review_meeting_003/assets/representation_cms216_220215_01.pdf"],
+      "source_type": "報告書",
+      "verified": true
+    },
+    {
+      "id": "L-VET-17",
+      "category": "獣医療法",
+      "title": "獣医療広告の制限（動物病院）",
+      "article": "獣医療法 第17条・施行規則 第24条（2024-04-01改正施行）",
+      "authority": "農林水産省",
+      "summary": "獣医師・診療施設の技能・療法・経歴の広告は原則制限（広告可能事項の限定列挙）。2024年4月改正で、費用・リスク等の併記を条件とする特例広告（限定解除型）が追加。",
+      "key_points": [
+        "広告の3要件：①誘引性 ②特定性 ③認知性（医療広告と同型）",
+        "原則広告可能：専門科名、学位・称号 等の限定列挙",
+        "2024/4改正の特例：問い合わせ先・通常必要とされる診療内容・主なリスク及び副作用・費用を全て併記すれば広告可",
+        "「必ず治る」等の効果保証・誇大は不可"
+      ],
+      "industries": ["G"],
+      "industries_sub": ["vet"],
+      "media": [],
+      "source_urls": ["https://www.maff.go.jp/j/syouan/tikusui/zyui/koukoku.html"],
+      "source_type": "法律",
+      "last_revised": "2024-04-01",
+      "verified": true
+    },
+    {
+      "id": "L-PF-SAFETY",
+      "category": "ペットフード安全法",
+      "title": "愛がん動物用飼料の安全性の確保に関する法律",
+      "article": "ペットフード安全法（2009-06-01施行）",
+      "authority": "環境省・農林水産省（共管）",
+      "summary": "犬・猫用ペットフードの安全確保。表示義務：①名称 ②原材料名 ③賞味期限 ④製造業者等の名称・住所 ⑤原産国名。",
+      "key_points": [
+        "対象は犬及び猫用（総合栄養食・一般食・間食・療法食・サプリ・水等ほぼ全て）",
+        "5項目の表示義務（名称/原材料/賞味期限/事業者/原産国）",
+        "有害物質・製造方法の基準あり"
+      ],
+      "industries": ["G"],
+      "industries_sub": ["petfood"],
+      "media": ["package", "lp", "hp"],
+      "source_urls": ["https://www.env.go.jp/nature/dobutsu/aigo/petfood/index.html", "https://laws.e-gov.go.jp/law/420AC0000000083"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-PF-FAIR",
+      "category": "公正競争規約",
+      "title": "ペットフードの表示に関する公正競争規約",
+      "article": "景表法に基づく認定規約（ペットフード公正取引協議会）",
+      "authority": "消費者庁・公正取引委員会（認定）",
+      "summary": "ペットフードは食品表示法でなく景表法が適用。犬/猫の別＋目的区分（総合栄養食/間食/療法食/その他の目的食）の表示、「無添加」表示の制限等。",
+      "key_points": [
+        "「総合栄養食」＝当該フードと水だけで指定成長段階の健康維持ができる栄養バランス（AAFCO基準準拠）の場合のみ表示可",
+        "「無添加」は添加物便覧記載の当該添加物を一切不使用と確認できる場合限定＋何が無添加か（原材料名・添加物名）の併記必須",
+        "人間用食品と誤認させる表示・「国産」等の原産国誤認に注意"
+      ],
+      "industries": ["G"],
+      "industries_sub": ["petfood", "petsupp"],
+      "media": [],
+      "source_urls": ["https://pffta.org/label/required_fair_competition/", "https://www.jfftc.org/kiyaku/pdf/g01_H_pet.pdf"],
+      "source_type": "自主基準",
+      "verified": true
+    },
+    {
+      "id": "L-VET-DRUG",
+      "category": "薬機法（動物用）",
+      "title": "動物用医薬品・ペットの薬事表現",
+      "article": "薬機法（動物用読み替え）・動物用医薬品等取締規則・農水省通知「動物用医薬品等の範囲に関する基準」",
+      "authority": "農林水産省",
+      "summary": "動物の疾病の診断・治療・予防を標榜できるのは承認された動物用医薬品のみ。ペットフード・ペットサプリでの医薬品的効能標榜は薬機法違反。",
+      "key_points": [
+        "医薬品的効能の標榜判断：①疾病の診断・治療・予防目的の表示 ②身体の構造・機能に影響を及ぼす目的の表示 ③医薬部外品的効能の表示 ④医薬品であることを暗示する表示",
+        "ペットフード・サプリで「〇〇病に効く」「予防する」「治る」＝違反（＋景表法優良誤認）",
+        "ペットフード公正取引協議会「薬事表現に関するガイドライン」参照",
+        "「関節の健康維持をサポート」等、健康維持の範囲に留める"
+      ],
+      "industries": ["G"],
+      "industries_sub": ["petfood", "petsupp", "petgoods"],
+      "media": [],
+      "source_urls": ["https://www.maff.go.jp/j/kokuji_tuti/tuti/t0000836.html", "https://pffta.org/label/guidelines/", "https://laws.e-gov.go.jp/law/416M60000200107"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-MED-DEVICE",
+      "category": "薬機法",
+      "title": "美容・健康機器の医療機器該当性",
+      "article": "薬機法 第2条（医療機器の定義）・第68条",
+      "authority": "厚生労働省",
+      "summary": "身体の構造・機能に影響を及ぼす効能（痩身・脱毛効果・治療効果等）を標榜すると医療機器該当性が生じ、未承認機器の広告は68条違反。",
+      "key_points": [
+        "家庭用美容機器で「脂肪を分解」「セルライト除去」「たるみ治療」等はNG",
+        "「永久脱毛」は医療行為（医療機関のみ）。エステ脱毛は減毛・抑毛の範囲",
+        "承認済み家庭用医療機器は承認効能の範囲内で標榜可"
+      ],
+      "industries": ["E", "D"],
+      "industries_sub": ["device"],
+      "media": [],
+      "source_urls": ["https://laws.e-gov.go.jp/law/335AC0000000145"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-MLHW-KENSHOKU",
+      "category": "運用通知",
+      "title": "健康食品の留意事項（景表法・健康増進法）",
+      "article": "「健康食品に関する景品表示法及び健康増進法上の留意事項について」（H28制定・R4.12改定）",
+      "authority": "消費者庁",
+      "summary": "健康食品広告の実務運用指針。痩身効果・体験談・打消し表示・機能性関与成分の表示等の考え方。",
+      "key_points": [
+        "食事制限なしで痩せる等の痩身効果訴求は根拠が厳しく問われる",
+        "体験談は効果の裏付けにならない（個人の感想である旨の打消しでは免責されない）",
+        "ビフォーアフター写真も優良誤認の典型"
+      ],
+      "industries": ["E"],
+      "industries_sub": ["supp", "func"],
+      "media": [],
+      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/assets/representation_cms213_230131_01.pdf"],
+      "source_type": "運用基準",
+      "verified": true
+    }
+  ]
+}

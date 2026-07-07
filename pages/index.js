@@ -1,10 +1,10 @@
 import Head from "next/head";
-import App from "../MedAdDiagnosticV5";
+import App from "../components/DiagnosticV2";
 
 const SITE_URL = "https://med-ad-diagnostic.vercel.app";
-const TITLE = "医療広告リスク診断ツール｜医療広告コンサル まさ";
+const TITLE = "広告リスク診断ツール｜薬機法・景表法・医療広告GL対応";
 const DESC =
-  "広告文を貼り付けるだけで、薬機法・景表法・医療広告ガイドラインの観点からリスク箇所と修正案を一次診断。薬剤師×医療広告コンサルタントが設計した491件の現場ルールで照合します。";
+  "業種と媒体を選んで広告文を貼るだけ。薬機法・景表法・医療広告GL・獣医療法など一次ソース検証済みの法令データベースと現場ルールで、条文根拠つきのリスク診断と修正案を返します。医療・施術・美容・EC・ペットの8業種に対応。";
 const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export default function Home() {
