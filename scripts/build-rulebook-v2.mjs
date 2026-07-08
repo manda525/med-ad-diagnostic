@@ -33,20 +33,33 @@ function toLawIds(lawStr) {
   return [...ids];
 }
 
-// ---- genre → 業種タグ（現行ルールは全てE系＋共通） ----
+// ---- genre → 業種タグ ----
 function toIndustry(genre) {
   const g = String(genre || "");
   if (g.startsWith("共通")) return { industries: [], subs: [] }; // 横断
   if (g.startsWith("健康食品")) return { industries: ["E"], subs: ["supp", "func"] };
   if (g.startsWith("化粧品")) return { industries: ["E"], subs: ["cosme"] };
   if (g.startsWith("医薬部外品")) return { industries: ["E"], subs: ["quasi", "cosme"] };
+  // v16 追加ジャンル：施術系（整体・整骨・痩身）→ B/C/D、医療広告（GLP-1）→ A
+  if (g.startsWith("整体痩身")) return { industries: ["B", "C", "D"], subs: [] };
+  if (g.startsWith("医療広告")) return { industries: ["A"], subs: [] };
   return { industries: [], subs: [] };
+}
+
+// ---- genre → 追加 law_id（法令テキストに現れない法令ノードを紐づける） ----
+function genreLawIds(genre) {
+  const g = String(genre || "");
+  if (g.startsWith("整体痩身")) return ["L-SEITAI", "L-KEIHYO-5"];
+  if (g.startsWith("医療広告")) return ["L-MED-AD"];
+  return [];
 }
 
 function convert(row, src_) {
   const [id, ng, risk, genre, comment, ok, law, jcia] = row;
   const { industries, subs } = toIndustry(genre);
   const law_ids = toLawIds(law);
+  // genre 由来の law_id を追加（テキストに出ない法令ノードを紐づけ）
+  for (const gid of genreLawIds(genre)) if (!law_ids.includes(gid)) law_ids.push(gid);
   // 補完: 健康食品で効能系なのに法令欄が空のケース → 66条を既定に
   if (law_ids.length === 0 && industries.includes("E")) law_ids.push("L-YAKKI-66");
   return {
