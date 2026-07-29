@@ -262,9 +262,12 @@ export default function DiagnosticV2() {
             <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "var(--acc)", fontWeight: 600, margin: "0 0 6px" }}>
               PHARMA-AD LAB
             </p>
-            <h1 className="serif" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.45, margin: "0 0 8px" }}>
-              広告リスク診断
+            <h1 className="serif" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.45, margin: "0 0 4px" }}>
+              薬機レーダー
             </h1>
+            <p style={{ fontSize: 12.5, letterSpacing: "0.02em", color: "var(--acc)", fontWeight: 600, margin: "0 0 9px" }}>
+              薬機法・景表法・医療広告GL　AIチェック
+            </p>
             <p style={{ fontSize: 13.5, lineHeight: 1.9, color: "var(--ink2)", margin: 0, maxWidth: 620 }}>
               業種と媒体を選んで広告文を貼るだけ。薬機法・景表法・医療広告GL・獣医療法など
               <strong>{stats.law_count}法令の一次ソースDB</strong>と<strong>{stats.rule_count}件の現場ルール</strong>に照らし、

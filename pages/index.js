@@ -2,7 +2,7 @@ import Head from "next/head";
 import App from "../components/DiagnosticV2";
 
 const SITE_URL = "https://med-ad-diagnostic.vercel.app";
-const TITLE = "広告リスク診断ツール｜薬機法・景表法・医療広告GL対応";
+const TITLE = "薬機レーダー｜薬機法・景表法・医療広告GL AIチェック";
 const DESC =
   "業種と媒体を選んで広告文を貼るだけ。薬機法・景表法・医療広告GL・獣医療法など一次ソース検証済みの法令データベースと現場ルールで、条文根拠つきのリスク診断と修正案を返します。医療・施術・美容・EC・ペットの8業種に対応。";
 const OG_IMAGE = `${SITE_URL}/og-image.png`;
@@ -23,7 +23,7 @@ export default function Home() {
         <meta property="og:image" content={OG_IMAGE} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:site_name" content="医療広告リスク診断ツール" />
+        <meta property="og:site_name" content="薬機レーダー" />
         <meta property="og:locale" content="ja_JP" />
 
         {/* Twitter (X) Card */}
