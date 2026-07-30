@@ -42,7 +42,10 @@ function toIndustry(genre) {
   if (g.startsWith("医薬部外品")) return { industries: ["E"], subs: ["quasi", "cosme"] };
   // v16 追加ジャンル：施術系（整体・整骨・痩身）→ B/C/D、医療広告（GLP-1）→ A
   if (g.startsWith("整体痩身")) return { industries: ["B", "C", "D"], subs: [] };
+  // v17 追加ジャンル：処方箋医薬品は医療機関＋薬局（A/A2）、医療機器の認証効能は機器を売る側（E）と使う側（D）
+  if (g === "医療広告_処方箋医薬品") return { industries: ["A", "A2"], subs: [] };
   if (g.startsWith("医療広告")) return { industries: ["A"], subs: [] };
+  if (g.startsWith("医療機器")) return { industries: ["E", "D"], subs: [] };
   return { industries: [], subs: [] };
 }
 
@@ -50,9 +53,16 @@ function toIndustry(genre) {
 function genreLawIds(genre) {
   const g = String(genre || "");
   if (g.startsWith("整体痩身")) return ["L-SEITAI", "L-KEIHYO-5"];
+  if (g === "医療広告_処方箋医薬品") return ["L-MED-AD", "L-PHARM"];
   if (g.startsWith("医療広告")) return ["L-MED-AD"];
+  if (g.startsWith("医療機器")) return ["L-MED-DEVICE"];
   return [];
 }
+
+// ---- 広告診断に載せないジャンル ----
+// 「食品表示_無添加（パッケージ）」は消費者庁の不使用表示ガイドライン由来で、
+// 対象は容器包装の表示のみ。広告は規制対象外なので広告診断へ機械適用しない。
+const EXCLUDED_GENRE = /^食品表示_/;
 
 function convert(row, src_) {
   const [id, ng, risk, genre, comment, ok, law, jcia] = row;
@@ -87,7 +97,7 @@ const out = {
     ...src.RB.map((r) => convert(r, "RB")),
     ...src.EX.map((r) => convert(r, "EX")),
     ...src.CS.map((r) => convert(r, "CS")),
-  ],
+  ].filter((r) => !EXCLUDED_GENRE.test(String(r.genre || ""))),
 };
 
 // 検証サマリ
@@ -111,6 +121,9 @@ fs.writeFileSync(
   })
 );
 
+const dropped =
+  src.RB.length + src.EX.length + src.CS.length - out.rules.length;
+if (dropped > 0) console.log(`excluded (${EXCLUDED_GENRE}): ${dropped}`);
 console.log(`rules: ${out.rules.length}`);
 console.log(`law_id coverage:`, byLaw);
 console.log(`no law_id: ${noLaw.length}`, noLaw.slice(0, 10).map((r) => `${r.id}:${r.genre}:${r.law}`));
