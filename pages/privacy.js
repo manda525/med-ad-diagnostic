@@ -48,7 +48,7 @@ export default function Privacy() {
   return (
     <>
       <Head>
-        <title>プライバシーポリシー | 医療広告リスク診断ツール</title>
+        <title>プライバシーポリシー | 薬機レーダー</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div style={styles.container}>

@@ -4,7 +4,7 @@ import Link from "next/link";
 const articles = [
   {
     heading: "第1条（適用）",
-    body: "本規約は、橋詰昌（以下「当方」）が提供する「医療広告リスク診断ツール」（以下「本サービス」）の利用条件を定めるものです。",
+    body: "本規約は、橋詰昌（以下「当方」）が提供する「薬機レーダー（医療広告リスク診断ツール）」（以下「本サービス」）の利用条件を定めるものです。",
   },
   {
     heading: "第2条（本サービスの性質・免責）",
@@ -47,7 +47,7 @@ export default function Terms() {
   return (
     <>
       <Head>
-        <title>利用規約 | 医療広告リスク診断ツール</title>
+        <title>利用規約 | 薬機レーダー</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div style={styles.container}>

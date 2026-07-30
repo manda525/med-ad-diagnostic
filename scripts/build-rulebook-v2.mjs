@@ -105,6 +105,7 @@ fs.writeFileSync(
   JSON.stringify({
     rule_count: out.rules.length,
     rule_version: src.meta?.version || "",
+    rule_updated: src.meta?.updated || "",
     law_count: law.laws.length,
     law_verified: law.laws.filter((l) => l.verified).length,
   })

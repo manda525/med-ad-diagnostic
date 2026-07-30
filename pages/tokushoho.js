@@ -45,7 +45,7 @@ export default function Tokushoho() {
   return (
     <>
       <Head>
-        <title>特定商取引法に基づく表記 | 医療広告リスク診断ツール</title>
+        <title>特定商取引法に基づく表記 | 薬機レーダー</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div style={styles.container}>

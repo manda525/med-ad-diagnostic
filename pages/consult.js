@@ -27,7 +27,7 @@ export default function Consult() {
   return (
     <>
       <Head>
-        <title>広告監修・コンサルティングのご案内 | 医療広告リスク診断ツール</title>
+        <title>広告監修・コンサルティングのご案内 | 薬機レーダー</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div style={styles.container}>

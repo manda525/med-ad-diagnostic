@@ -235,6 +235,7 @@ export default function DiagnosticV2() {
         .v2 .tile .t1 { font-size:13.5px; font-weight:600; }
         .v2 .tile .t2 { font-size:11px; color:var(--ink3); margin-top:2px; line-height:1.45; }
         .v2 .tile.on .t2 { color:var(--acc); }
+        .v2 .ico { font-size:0.9em; opacity:0.45; margin-right:3px; filter:grayscale(0.35); }
         .v2 .chip { font-size:12.5px; padding:7px 14px; border-radius:999px; border:1px solid var(--line2); background:var(--paper);
               cursor:pointer; color:var(--ink2); font-weight:500; }
         .v2 .chip.on { background:var(--ink); border-color:var(--ink); color:#fff; }
@@ -262,9 +263,12 @@ export default function DiagnosticV2() {
             <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "var(--acc)", fontWeight: 600, margin: "0 0 6px" }}>
               PHARMA-AD LAB
             </p>
-            <h1 className="serif" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.45, margin: "0 0 8px" }}>
-              広告リスク診断
+            <h1 className="serif" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.45, margin: "0 0 4px" }}>
+              薬機レーダー
             </h1>
+            <p style={{ fontSize: 12.5, letterSpacing: "0.02em", color: "var(--acc)", fontWeight: 600, margin: "0 0 9px" }}>
+              薬機法・景表法・医療広告GL　AIチェック
+            </p>
             <p style={{ fontSize: 13.5, lineHeight: 1.9, color: "var(--ink2)", margin: 0, maxWidth: 620 }}>
               業種と媒体を選んで広告文を貼るだけ。薬機法・景表法・医療広告GL・獣医療法など
               <strong>{stats.law_count}法令の一次ソースDB</strong>と<strong>{stats.rule_count}件の現場ルール</strong>に照らし、
@@ -286,6 +290,7 @@ export default function DiagnosticV2() {
             [`${INDUSTRIES.length}業種対応`, "医療・施術・美容・EC・ペット"],
             [`${stats.law_count}法令DB`, "一次ソース検証済み"],
             ["条文根拠つき", "law_idで法令に紐づく判定"],
+            [`ルールブック ${stats.rule_version}`, `${stats.rule_updated} 更新・${stats.rule_count}項目`],
           ].map(([t, d], i) => (
             <div key={i} style={{ fontSize: 11.5, color: "var(--ink3)" }}>
               <span style={{ color: "var(--ink)", fontWeight: 600 }}>{t}</span>　{d}
@@ -346,7 +351,7 @@ export default function DiagnosticV2() {
           {INDUSTRIES.map((ind) => (
             <button key={ind.id} type="button" className={`tile ${industry === ind.id ? "on" : ""}`}
               onClick={() => { setIndustry(ind.id); setSub(null); if (ind.id !== "F") { setClientIndustry(null); setClientSub(null); } }}>
-              <div className="t1">{ind.icon} {ind.label}</div>
+              <div className="t1"><span className="ico">{ind.icon}</span>{ind.label}</div>
               <div className="t2">{ind.desc}</div>
             </button>
           ))}
@@ -371,7 +376,7 @@ export default function DiagnosticV2() {
               {INDUSTRIES.filter((i) => i.id !== "F").map((i) => (
                 <button key={i.id} type="button" className={`chip ${clientIndustry === i.id ? "on" : ""}`}
                   onClick={() => { setClientIndustry(i.id); setClientSub(null); }}>
-                  {i.icon} {i.label}
+                  <span className="ico">{i.icon}</span>{i.label}
                 </button>
               ))}
             </div>
@@ -399,7 +404,7 @@ export default function DiagnosticV2() {
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))" }}>
           {MEDIA.map((m) => (
             <button key={m.id} type="button" className={`tile ${media === m.id ? "on" : ""}`} onClick={() => setMedia(m.id)}>
-              <div className="t1">{m.icon} {m.label}</div>
+              <div className="t1"><span className="ico">{m.icon}</span>{m.label}</div>
             </button>
           ))}
         </div>
