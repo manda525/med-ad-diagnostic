@@ -116,7 +116,27 @@ console.log("5. IP単位のレート制限");
 }
 
 // =============================================================
-console.log("6. ストアのフォールバック");
+console.log("6. IPを平文で保存しない");
+// =============================================================
+{
+  const ip = "203.0.113.45";
+  const h = u.hashIp(ip);
+  check("変換結果にIPそのものが含まれない", !h.includes(ip) && !h.includes("203"));
+  check("変換結果は固定長の16進", /^[0-9a-f]{16}$/.test(h), h);
+  check("同じIPなら同じ値になる（判定に使える）", u.hashIp(ip) === h);
+  check("違うIPなら違う値になる", u.hashIp("203.0.113.46") !== h);
+  check("鍵が違えば同じIPでも別の値になる", (() => {
+    const before = process.env.APP_TOKEN_SECRET;
+    process.env.APP_TOKEN_SECRET = before + "-different";
+    const other = u.hashIp(ip);
+    process.env.APP_TOKEN_SECRET = before;
+    return other !== h;
+  })());
+  check("IPv6でも扱える", /^[0-9a-f]{16}$/.test(u.hashIp("2001:db8::1")));
+}
+
+// =============================================================
+console.log("7. ストアのフォールバック");
 // =============================================================
 check("Upstash未設定ならメモリで動く", u.storeBackend() === "memory");
 
