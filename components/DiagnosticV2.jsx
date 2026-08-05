@@ -86,14 +86,27 @@ export default function DiagnosticV2() {
   const [usageCount, setUsageCount] = useState(0);
   const [isPro, setIsPro] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState("");
-  const [customerId, setCustomerId] = useState("");
+
+  // 利用回数の正本はサーバー側。ここで取るのは表示用（実際の可否は診断APIが判定する）。
+  const refreshUsage = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    const entToken = window.localStorage.getItem("med_ad_token") || "";
+    try {
+      const r = await fetch("/api/usage", {
+        headers: entToken ? { "x-entitlement-token": entToken } : {},
+      });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (typeof data.used === "number") setUsageCount(data.used);
+      setIsPro(!!data.pro);
+    } catch {
+      /* 表示用なので失敗しても診断はできる */
+    }
+  }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setUsageCount(parseInt(window.localStorage.getItem("med_ad_usage") || "0", 10) || 0);
-    setIsPro(window.localStorage.getItem("med_ad_pro") === "1" && !!window.localStorage.getItem("med_ad_token"));
-    setCustomerId(window.localStorage.getItem("med_ad_customer") || "");
-  }, []);
+    refreshUsage();
+  }, [refreshUsage]);
 
   // Stripe Checkout からの復帰
   useEffect(() => {
@@ -118,16 +131,14 @@ export default function DiagnosticV2() {
           window.localStorage.setItem("med_ad_pro", "1");
           window.localStorage.setItem("med_ad_token", data.token);
           setIsPro(true);
-          if (data.customerId) {
-            window.localStorage.setItem("med_ad_customer", data.customerId);
-            setCustomerId(data.customerId);
-          }
+          // 起動時の refreshUsage がトークン取得前に走っていた場合の取り違えを防ぐため、取り直す
+          refreshUsage();
         } else {
           setErr("決済の確認ができませんでした。反映されない場合はお問い合わせください。");
         }
       } catch { setErr("決済の確認中にエラーが発生しました。"); }
     })();
-  }, []);
+  }, [refreshUsage]);
 
   const startCheckout = useCallback(async (plan) => {
     setErr(""); setCheckoutLoading(plan);
@@ -143,21 +154,21 @@ export default function DiagnosticV2() {
     } catch (e) { setErr(e.message || "決済の開始に失敗しました"); setCheckoutLoading(""); }
   }, []);
 
+  // 顧客IDは送らない。サーバーが署名付きトークンから取り出す。
   const openPortal = useCallback(async () => {
     if (typeof window === "undefined") return;
-    const cid = customerId || window.localStorage.getItem("med_ad_customer");
-    if (!cid) { setErr("お客様情報が見つかりません。"); return; }
+    const entToken = window.localStorage.getItem("med_ad_token") || "";
+    if (!entToken) { setErr("ご契約の確認ができませんでした。"); return; }
     try {
       const r = await fetch("/api/portal", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: cid }),
+        headers: { "Content-Type": "application/json", "x-entitlement-token": entToken },
       });
       const data = await r.json().catch(() => ({}));
       if (r.ok && data.url) { window.location.href = data.url; return; }
       throw new Error(data.error || "管理ページを開けませんでした");
     } catch (e) { setErr(e.message || "管理ページを開けませんでした"); }
-  }, [customerId]);
+  }, []);
 
   const isOverFreeLimit = usageCount >= FREE_LIMIT && !isPro;
   const isOverHardLimit = usageCount >= HARD_LIMIT && !isPro;
@@ -186,27 +197,27 @@ export default function DiagnosticV2() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-usage-count": String(usageCount),
           ...(entToken ? { "x-entitlement-token": entToken } : {}),
         },
         body: JSON.stringify({ text, industry, sub, media, clientIndustry, clientSub }),
       });
       const data = await r.json().catch(() => ({}));
+      // 回数はサーバーが数えている。返ってきた値をそのまま表示に反映する。
+      if (data.usage && typeof data.usage.used === "number") {
+        setUsageCount(data.usage.used);
+        setIsPro(!!data.usage.pro);
+      }
       if (r.status === 402) { setErr(data.error || "無料診断の上限に達しました。"); return; }
+      if (r.status === 429) { setErr(data.error || "リクエストが集中しています。しばらく置いてからお試しください。"); return; }
       if (!r.ok) throw new Error(data.error || `API応答エラー (${r.status})`);
       setRes(data);
-      setUsageCount((c) => {
-        const next = c + 1;
-        if (typeof window !== "undefined") window.localStorage.setItem("med_ad_usage", next);
-        return next;
-      });
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
     } catch (e) {
       setErr(e.message || "診断に失敗しました。もう一度お試しください。");
     } finally {
       setLoading(false); setStepMsg("");
     }
-  }, [canRun, text, industry, sub, media, clientIndustry, clientSub, usageCount]);
+  }, [canRun, text, industry, sub, media, clientIndustry, clientSub]);
 
   const a = res?.analysis;
   const jStyle = a ? (JUDGMENT_STYLE[a.final_judgment] || JUDGMENT_STYLE["要修正"]) : null;
@@ -308,7 +319,7 @@ export default function DiagnosticV2() {
           <p style={{ margin: "0 0 12px" }}><a href="/consult" style={{ fontSize: 13, color: "var(--acc)", fontWeight: 600, textDecoration: "none" }}>監修サービスの詳細を見る →</a></p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <a className="btn-ghost" style={{ textDecoration: "none" }} href={`mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`}>📧 メールで相談</a>
-            <a className="btn-ghost" style={{ textDecoration: "none" }} href="https://x.com/zero89314" target="_blank" rel="noopener noreferrer">𝕏 DMで相談</a>
+            <a className="btn-ghost" style={{ textDecoration: "none" }} href="https://x.com/Pharma_Ad_Lab" target="_blank" rel="noopener noreferrer">𝕏 DMで相談</a>
             <a className="btn-ghost" style={{ textDecoration: "none" }} href="https://note.com/med_ad_consult" target="_blank" rel="noopener noreferrer">note</a>
           </div>
         </div>

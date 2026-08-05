@@ -2,14 +2,20 @@
 // - クライアントは {text, industry, sub, media, clientIndustry, clientSub} のみ送信（プロンプト・モデルはサーバーが所有）
 // - Fable 5: thinking常時オン（パラメータ送信不可）・server-side fallbacks で refusal 時は opus-4-8 に自動退避
 // - 構造化出力 output_config.format で JSON を保証（クライアント側の堅牢パーサ不要に）
+// - 無料枠の回数はサーバー側で計上する。クライアントの申告値は使わない
 
 import { verifyToken } from "../../lib/entitlement";
 import { getStripe } from "../../lib/stripe";
 import { buildPrompt, OUTPUT_SCHEMA, RULE_VER, RULE_COUNT } from "../../lib/engine";
+import {
+  checkQuota,
+  consumeFreeQuota,
+  getClientIp,
+  resolveVisitorId,
+} from "../../lib/usage";
 
 export const config = { maxDuration: 60 };
 
-const FREE_HARD_LIMIT = 6;
 const MODEL = process.env.DIAGNOSE_MODEL || "claude-fable-5";
 const EFFORT = process.env.DIAGNOSE_EFFORT || "medium";
 
@@ -30,14 +36,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const usage = parseInt(req.headers["x-usage-count"] || "0", 10) || 0;
   const pro = await isProRequest(req);
   res.setHeader("x-pro", pro ? "1" : "0");
 
-  if (!pro && usage >= FREE_HARD_LIMIT) {
-    return res.status(402).json({
-      error: "無料診断の上限に達しました。プランにご登録ください。",
-      requireUpgrade: true,
+  const ip = getClientIp(req);
+  const visitorId = resolveVisitorId(req, res);
+
+  const quota = await checkQuota({ visitorId, ip, pro });
+  if (!quota.allowed) {
+    return res.status(quota.status).json({
+      error: quota.error,
+      requireUpgrade: quota.requireUpgrade,
+      usage: { ...quota.usage, pro },
     });
   }
 
@@ -106,6 +116,9 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: "AI応答の解析に失敗しました。もう一度お試しください。" });
     }
 
+    // 成功したときだけ無料枠を消費する（API障害で回数を失わせない）
+    const usage = pro ? quota.usage : await consumeFreeQuota({ visitorId, ip });
+
     return res.status(200).json({
       analysis,
       matches: matched.slice(0, 30).map((m) => ({
@@ -114,6 +127,7 @@ export default async function handler(req, res) {
       })),
       matchCount: matched.length,
       laws: laws.map((l) => ({ id: l.id, title: l.title, article: l.article, source_urls: l.source_urls })),
+      usage: { ...usage, pro },
       engine: {
         model: data.model || MODEL,
         rulebook: `${RULE_VER}/${RULE_COUNT}`,
