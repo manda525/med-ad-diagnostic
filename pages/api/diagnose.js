@@ -73,26 +73,34 @@ export default async function handler(req, res) {
   });
 
   try {
+    const headers = {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    };
+    const body = {
+      model: MODEL,
+      max_tokens: 8000,
+      // Fable 5 は thinking 常時オン（パラメータ省略）
+      output_config: {
+        effort: EFFORT,
+        format: { type: "json_schema", schema: OUTPUT_SCHEMA },
+      },
+      system,
+      messages: [{ role: "user", content: user }],
+    };
+    // server-side fallbacks は Fable 5 系だけが受け付ける。他のモデルに付けると400になるため、
+    // DIAGNOSE_MODEL を切り替えたときに壊れないよう対象モデルのときだけ付ける。
+    if (MODEL === "claude-fable-5" || MODEL === "claude-mythos-5") {
+      // refusal 時は opus-4-8 が同一リクエスト内で引き継ぐ
+      body.fallbacks = [{ model: "claude-opus-4-8" }];
+      headers["anthropic-beta"] = "server-side-fallback-2026-06-01";
+    }
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-beta": "server-side-fallback-2026-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 8000,
-        // Fable 5 は thinking 常時オン（パラメータ省略）。refusal 時は opus-4-8 が同一リクエスト内で引き継ぐ
-        fallbacks: [{ model: "claude-opus-4-8" }],
-        output_config: {
-          effort: EFFORT,
-          format: { type: "json_schema", schema: OUTPUT_SCHEMA },
-        },
-        system,
-        messages: [{ role: "user", content: user }],
-      }),
+      headers,
+      body: JSON.stringify(body),
     });
 
     const data = await response.json();
