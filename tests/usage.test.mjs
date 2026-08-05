@@ -140,6 +140,28 @@ console.log("7. ストアのフォールバック");
 // =============================================================
 check("Upstash未設定ならメモリで動く", u.storeBackend() === "memory");
 
+// Vercel の Upstash 連携が作る変数名でも認識できること（接頭辞の付き方が作成経路で変わるため）
+{
+  const cases = [
+    ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
+    ["UPSTASH_REDIS_REST_KV_REST_API_URL", "UPSTASH_REDIS_REST_KV_REST_API_TOKEN"],
+    ["KV_REST_API_URL", "KV_REST_API_TOKEN"],
+  ];
+  for (const [urlVar, tokenVar] of cases) {
+    process.env[urlVar] = "https://example.upstash.io";
+    process.env[tokenVar] = "dummy-token";
+    check(`${urlVar} / ${tokenVar} を認識する`, u.storeBackend() === "redis");
+    delete process.env[urlVar];
+    delete process.env[tokenVar];
+  }
+  check("片方だけではストアとして扱わない", (() => {
+    process.env.KV_REST_API_URL = "https://example.upstash.io";
+    const backend = u.storeBackend();
+    delete process.env.KV_REST_API_URL;
+    return backend === "memory";
+  })());
+}
+
 // =============================================================
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\n=== pass ${pass} / fail ${failures.length} ===`);

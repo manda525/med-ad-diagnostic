@@ -44,8 +44,15 @@ docs/law_master.md       法令マスター（人間可読版・一次ソースU
 
 | 変数名 | 既定 | 用途 |
 |---|---|---|
-| `UPSTASH_REDIS_REST_URL` | — | 利用回数・レート制限のストア |
-| `UPSTASH_REDIS_REST_TOKEN` | — | 同上。**未設定だとプロセス内メモリにフォールバックし、計上が厳密でなくなる** |
+| Upstash Redis の REST URL / TOKEN | — | 利用回数・レート制限のストア。**未設定だとプロセス内メモリにフォールバックし、計上が厳密でなくなる** |
+
+Upstash の変数名は作り方で変わるため、次の順で探す（先に見つかった組を使う）。
+
+| URL | TOKEN | 作り方 |
+|---|---|---|
+| `UPSTASH_REDIS_REST_URL` | `UPSTASH_REDIS_REST_TOKEN` | Upstash で直接データベースを作成 |
+| `UPSTASH_REDIS_REST_KV_REST_API_URL` | `UPSTASH_REDIS_REST_KV_REST_API_TOKEN` | Vercel の Storage 連携（接頭辞 `UPSTASH_REDIS_REST`）**← 本番はこれ** |
+| `KV_REST_API_URL` | `KV_REST_API_TOKEN` | Vercel の Storage 連携（接頭辞なし） |
 | `DIAGNOSE_MODEL` | `claude-fable-5` | 診断モデル |
 | `DIAGNOSE_EFFORT` | `medium` | `output_config.effort` |
 
