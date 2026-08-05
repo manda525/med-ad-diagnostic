@@ -1,5 +1,5 @@
 // 現在の無料枠の残数を返す（消費しない）。
-// 回数の正本はサーバー側にあるため、UIの「残り n/6 回」はここから取る（RFC-001 B-1）。
+// 回数の正本はサーバー側にあるため、UIの「残り n/6 回」はここから取る。
 
 import { verifyToken } from "../../lib/entitlement";
 import { getStripe } from "../../lib/stripe";
