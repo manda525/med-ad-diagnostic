@@ -15,10 +15,17 @@ import {
   isSecretConfigured,
 } from "../../lib/usage";
 
-export const config = { maxDuration: 60 };
+// このプロジェクトの Function Max Duration の既定は 300秒（Vercelダッシュボードで確認）。
+// 従来ここで 60 に上書きしていたため、思考時間の長いモデルでは必ず打ち切られていた。
+// 既定に合わせて 300 とし、モデルを選べる状態にする。
+export const config = { maxDuration: 300 };
 
 const MODEL = process.env.DIAGNOSE_MODEL || "claude-fable-5";
 const EFFORT = process.env.DIAGNOSE_EFFORT || "medium";
+
+// プラットフォーム側で打ち切られる前に自分で止め、利用者に意味のある応答を返すための予算。
+// maxDuration より短くしておかないと、504 だけが返って理由が分からなくなる。
+const REQUEST_BUDGET_MS = 280_000;
 
 async function isProRequest(req) {
   const payload = verifyToken(req.headers["x-entitlement-token"]);
@@ -114,11 +121,19 @@ export default async function handler(req, res) {
       headers["anthropic-beta"] = "server-side-fallback-2026-06-01";
     }
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_BUDGET_MS);
+    let response;
+    try {
+      response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
 
     const data = await response.json();
     if (!response.ok) {
@@ -160,6 +175,12 @@ export default async function handler(req, res) {
       },
     });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      console.error("diagnose timed out after", REQUEST_BUDGET_MS, "ms");
+      return failWith(504, {
+        error: "判定に時間がかかりすぎたため中断しました。広告文を短くして分割するか、しばらく置いてお試しください。",
+      });
+    }
     console.error("diagnose failed:", error);
     return failWith(500, { error: error.message });
   }
