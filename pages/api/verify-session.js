@@ -31,9 +31,9 @@ export default async function handler(req, res) {
     const subscriptionId = sub.id;
     const exp = sub.current_period_end || Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 31;
     const token = signToken({ c: customerId, s: subscriptionId, exp });
+    // customerId はレスポンスに載せない。署名付きトークンの中だけで持ち回る
     return res.status(200).json({
       pro: true,
-      customerId,
       subscriptionId,
       currentPeriodEnd: sub.current_period_end || null,
       token,

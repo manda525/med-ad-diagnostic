@@ -24,6 +24,8 @@ docs/law_master.md       法令マスター（人間可読版・一次ソースU
 - **F（広告・制作）**は受託先業種の規制を継承＋ステマ規制・表示主体責任を追加。
 - **モデル**：`claude-fable-5`（thinking常時オン）。refusal時は同一リクエスト内で `claude-opus-4-8` に自動フォールバック。構造化出力（output_config.format）でJSON保証。
 
+- **利用枠**：無料6回はサーバー側で計上する（署名付きHttpOnly Cookieの訪問者ID＋IP単位のレート制限）。クライアントから送られる回数の申告は使わない。
+
 ## デプロイ
 
 ### 必須環境変数（Vercel側で設定）
@@ -32,9 +34,33 @@ docs/law_master.md       法令マスター（人間可読版・一次ソースU
 |---|---|
 | `ANTHROPIC_API_KEY` | Anthropic ConsoleのAPIキー |
 | `STRIPE_SECRET_KEY` | Stripe 秘密鍵 |
-| `APP_TOKEN_SECRET` | エンタイトルメントトークン署名用 |
-| `DIAGNOSE_MODEL` | （任意）既定 `claude-fable-5` |
-| `DIAGNOSE_EFFORT` | （任意）既定 `medium` |
+| `STRIPE_PRICE_INDIVIDUAL` | 個人プランの price ID |
+| `STRIPE_PRICE_CORPORATE` | 法人プランの price ID |
+| `STRIPE_WEBHOOK_SECRET` | Stripe Webhook の署名シークレット |
+| `APP_TOKEN_SECRET` | エンタイトルメントトークン＋訪問者ID Cookie の署名用。**変更すると既存の課金ユーザーのトークンが無効になる** |
+| `NEXT_PUBLIC_SITE_URL` | 本番URL（Stripeの戻り先） |
+
+### 任意環境変数
+
+| 変数名 | 既定 | 用途 |
+|---|---|---|
+| Upstash Redis の REST URL / TOKEN | — | 利用回数・レート制限のストア。**未設定だとプロセス内メモリにフォールバックし、計上が厳密でなくなる** |
+
+Upstash の変数名は作り方で変わるため、次の順で探す（先に見つかった組を使う）。
+
+| URL | TOKEN | 作り方 |
+|---|---|---|
+| `UPSTASH_REDIS_REST_URL` | `UPSTASH_REDIS_REST_TOKEN` | Upstash で直接データベースを作成 |
+| `UPSTASH_REDIS_REST_KV_REST_API_URL` | `UPSTASH_REDIS_REST_KV_REST_API_TOKEN` | Vercel の Storage 連携（接頭辞 `UPSTASH_REDIS_REST`）**← 本番はこれ** |
+| `KV_REST_API_URL` | `KV_REST_API_TOKEN` | Vercel の Storage 連携（接頭辞なし） |
+| `DIAGNOSE_MODEL` | `claude-fable-5` | 診断モデル |
+| `DIAGNOSE_EFFORT` | `medium` | `output_config.effort` |
+
+## テスト
+
+```bash
+npm run test:security   # 利用枠とレート制限の回帰テスト。AI・Stripeを呼ばないので費用も外部通信もかからない
+```
 
 ## ルール更新フロー
 

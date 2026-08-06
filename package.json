@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "build:rulebook": "node scripts/build-rulebook-v2.mjs"
+    "build:rulebook": "node scripts/build-rulebook-v2.mjs",
+    "test:security": "node tests/usage.test.mjs"
   },
   "dependencies": {
     "next": "^14.2.5",

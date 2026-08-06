@@ -28,7 +28,7 @@ export default function Home() {
 
         {/* Twitter (X) Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@zero89314" />
+        <meta name="twitter:site" content="@Pharma_Ad_Lab" />
         <meta name="twitter:title" content={TITLE} />
         <meta name="twitter:description" content={DESC} />
         <meta name="twitter:image" content={OG_IMAGE} />
@@ -47,7 +47,7 @@ export default function Home() {
         <a href="/terms" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>利用規約</a>
         ・
         <a href="/privacy" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>プライバシーポリシー</a>
-        <div style={{marginTop:8}}>© 2026 橋詰昌</div>
+        <div style={{marginTop:8}}>© 2026 Pharma-Ad Lab</div>
       </footer>
     </>
   );
