@@ -22,3 +22,6 @@ npm-debug.log*
 .vercel
 .env*
 !.env.local.example
+
+# AI パートナー用の非公開作業領域（絶対にコミットしない）
+.ai-private/
