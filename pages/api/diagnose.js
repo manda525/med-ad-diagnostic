@@ -8,10 +8,11 @@ import { verifyToken } from "../../lib/entitlement";
 import { getStripe } from "../../lib/stripe";
 import { buildPrompt, OUTPUT_SCHEMA, RULE_VER, RULE_COUNT } from "../../lib/engine";
 import {
-  checkQuota,
-  consumeFreeQuota,
+  reserveQuota,
+  releaseQuota,
   getClientIp,
   resolveVisitorId,
+  isSecretConfigured,
 } from "../../lib/usage";
 
 export const config = { maxDuration: 60 };
@@ -36,13 +37,23 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  // APP_TOKEN_SECRET が無いと Cookie の署名も IP の秘匿も成立しない。
+  // 既定値へフォールバックすると利用枠の判定が骨抜きになるため、停止する。
+  if (!isSecretConfigured()) {
+    console.error("APP_TOKEN_SECRET is not set — refusing to serve diagnoses");
+    return res.status(503).json({
+      error: "サーバー設定が未完了のため、現在ご利用いただけません。しばらくしてからお試しください。",
+    });
+  }
+
   const pro = await isProRequest(req);
   res.setHeader("x-pro", pro ? "1" : "0");
 
   const ip = getClientIp(req);
   const visitorId = resolveVisitorId(req, res);
 
-  const quota = await checkQuota({ visitorId, ip, pro });
+  // AI を呼ぶ前に枠を予約する。失敗したら finally 相当の経路で戻す。
+  const quota = await reserveQuota({ visitorId, ip, pro });
   if (!quota.allowed) {
     return res.status(quota.status).json({
       error: quota.error,
@@ -50,18 +61,24 @@ export default async function handler(req, res) {
       usage: { ...quota.usage, pro },
     });
   }
+  const reservation = quota.reservation;
+  // 予約を戻したうえで応答する（AI が結果を返せなかった場合に回数を減らさない）
+  const failWith = async (status, payload) => {
+    await releaseQuota(reservation);
+    return res.status(status).json(payload);
+  };
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "ANTHROPIC_API_KEY が設定されていません。" });
+    return failWith(500, { error: "ANTHROPIC_API_KEY が設定されていません。" });
   }
 
   const { text, industry, sub, media, clientIndustry, clientSub } = req.body || {};
   if (!text || !String(text).trim()) {
-    return res.status(400).json({ error: "広告文が空です。" });
+    return failWith(400, { error: "広告文が空です。" });
   }
   if (String(text).length > 8000) {
-    return res.status(400).json({ error: "広告文が長すぎます（8,000文字まで）。分割してお試しください。" });
+    return failWith(400, { error: "広告文が長すぎます（8,000文字まで）。分割してお試しください。" });
   }
 
   const { system, user, matched, laws } = buildPrompt(String(text), {
@@ -106,12 +123,12 @@ export default async function handler(req, res) {
     const data = await response.json();
     if (!response.ok) {
       console.error("anthropic error:", JSON.stringify(data).slice(0, 500));
-      return res.status(response.status).json({ error: data?.error?.message || "AI診断でエラーが発生しました。" });
+      return failWith(response.status, { error: data?.error?.message || "AI診断でエラーが発生しました。" });
     }
 
     // refusal（フォールバック含め全滅）チェック — content を読む前に必ず判定
     if (data.stop_reason === "refusal") {
-      return res.status(422).json({
+      return failWith(422, {
         error: "この内容はAIによる自動診断の対象外と判定されました。監修相談をご利用ください。",
       });
     }
@@ -121,11 +138,11 @@ export default async function handler(req, res) {
     try {
       analysis = JSON.parse(raw);
     } catch {
-      return res.status(502).json({ error: "AI応答の解析に失敗しました。もう一度お試しください。" });
+      return failWith(502, { error: "AI応答の解析に失敗しました。もう一度お試しください。" });
     }
 
-    // 成功したときだけ無料枠を消費する（API障害で回数を失わせない）
-    const usage = pro ? quota.usage : await consumeFreeQuota({ visitorId, ip });
+    // ここまで来たら成功。予約はそのまま消費として確定させる。
+    const usage = quota.usage;
 
     return res.status(200).json({
       analysis,
@@ -144,6 +161,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("diagnose failed:", error);
-    return res.status(500).json({ error: error.message });
+    return failWith(500, { error: error.message });
   }
 }
