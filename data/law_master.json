@@ -2,8 +2,8 @@
   "meta": {
     "version": "v1",
     "created": "2026-07-07",
-    "note": "法令マスター。docs/law_master.md を構造化。各ルールは law_ids で本マスターに紐づく。一次ソース主義。",
-    "node_count": 25
+    "note": "法令マスター。docs/law_master.md を構造化。各ルールは law_ids で本マスターに紐づく。一次ソース主義。業種H（CBD・カンナビノイド関連）は業種タクソノミー未実装のため現時点では診断に適用されない。",
+    "node_count": 29
   },
   "laws": [
     {
@@ -484,6 +484,89 @@
       "source_urls": ["https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/assets/representation_cms213_230131_01.pdf"],
       "source_type": "運用基準",
       "verified": true
+    },
+    {
+      "id": "L-CANNABIS-CULT",
+      "category": "大麻規制",
+      "title": "大麻草の栽培の規制に関する法律（旧・大麻取締法）",
+      "article": "昭和23年法律第124号（改正：令和5年法律第84号）",
+      "authority": "厚生労働省",
+      "summary": "令和5年改正により大麻取締法から改称。規制の建付けが「部位規制」から「成分（Δ9-THC）による規制」へ転換した。栽培免許は用途により2区分。第1段階施行 2024-12-12、第2段階施行 2025-03-01。",
+      "key_points": [
+        "従来の部位規制（茎・種子は可、花穂・葉は不可）から、Δ9-THC含有量による規制へ転換した",
+        "第一種大麻草採取栽培者＝製品の原材料の採取（都道府県知事免許）。Δ9-THC濃度0.3%以下の大麻草を栽培する",
+        "第二種大麻草採取栽培者＝医薬品の原料の採取（厚生労働大臣免許）",
+        "改正前の資料・記事は部位規制を前提にしているため、そのまま引用すると誤りになる"
+      ],
+      "industries": ["H"],
+      "industries_sub": [],
+      "media": [],
+      "source_urls": ["https://laws.e-gov.go.jp/law/323AC0000000124/20241212_505AC0000000084", "https://www.mhlw.go.jp/stf/newpage_43079.html", "https://www.mhlw.go.jp/content/001159661.pdf"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-NARCOTICS-THC",
+      "category": "麻薬取締",
+      "title": "Δ9-THCの残留限度値（麻薬該当性）",
+      "article": "麻薬及び向精神薬取締法（令和5年法律第84号による改正）",
+      "authority": "厚生労働省",
+      "summary": "製品中のΔ9-THCが定められた残留限度値を超える場合、その製品は麻薬に該当する。限度値は製品の形態により3区分。",
+      "key_points": [
+        "油脂・粉末（常温で液体のものを含む）：10 ppm（10mg/kg）",
+        "水溶液：0.10 ppm（0.10mg/kg）",
+        "その他の製品：1 ppm（1mg/kg）",
+        "限度値を超える製品は麻薬に該当し、輸入・所持・譲渡が規制される",
+        "「THCフリー」「ノンTHC」等の表示は、限度値以下であることと同義ではない。根拠となる成分分析の裏付けが必要"
+      ],
+      "industries": ["H"],
+      "industries_sub": [],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/stf/newpage_43079.html", "https://www.mhlw.go.jp/content/001159661.pdf"],
+      "source_type": "法律",
+      "verified": true
+    },
+    {
+      "id": "L-CBD-IMPORT",
+      "category": "大麻規制運用",
+      "title": "CBD関連製品の輸入時の事前確認",
+      "article": "厚生労働省 地方厚生局麻薬取締部の運用",
+      "authority": "厚生労働省 医薬局 監視指導・麻薬対策課／麻薬取締部",
+      "summary": "CBD・CBG・CBNを含む製品について、麻薬に該当しないことの事前確認を麻薬取締部へ依頼できる。成分分析書の提出が必要で、回答まで1〜2か月を要する。",
+      "key_points": [
+        "対象成分はCBD（カンナビジオール）、CBG（カンナビゲロール）、CBN（カンナビノール）",
+        "厚労省の記載では、この事前確認は輸入に際して必ず必要な法定事項ではない（任意の事前確認）。「輸入許可」ではない点に注意",
+        "成分分析書には定められた記載事項があり、不備があると再提出となりさらに時間を要する",
+        "受付はメールのみ。回答まで1〜2か月",
+        "広告で「厚労省の確認済み」「輸入許可取得」等と表示すると、事実と異なる表示になり得る"
+      ],
+      "industries": ["H"],
+      "industries_sub": [],
+      "media": [],
+      "source_urls": ["https://www.ncd.mhlw.go.jp/cbd.html", "https://www.ncd.mhlw.go.jp/dl_data/cbd/cbdtebiki_20241212.pdf"],
+      "source_type": "運用基準",
+      "verified": true
+    },
+    {
+      "id": "L-CBD-AD",
+      "category": "大麻規制運用",
+      "title": "CBD製品の広告に適用される規制の整理",
+      "article": "薬機法66条・68条／健康増進法65条／景表法5条・7条",
+      "authority": "厚生労働省・消費者庁",
+      "summary": "CBD固有の広告規制は確認できていない。既存の枠組みが適用される。医薬品的効能効果の標榜は未承認医薬品広告に該当し得る。食品として販売する場合は健康食品の留意事項が適用される。",
+      "key_points": [
+        "医薬品的効能効果（不眠・不安・疼痛・てんかん等の疾病の治療予防）の標榜は、未承認医薬品の広告に該当し得る",
+        "食品として販売する場合、健康保持増進効果の誇大表示は健康増進法65条の対象",
+        "体感・効果の訴求は景表法7条2項（不実証広告規制）で合理的根拠の提出を求められ得る",
+        "海外の承認薬（エピディオレックス等）を引用して国内製品の効果を示唆する手法は、未承認医薬品広告のリスクが高い",
+        "※本ノードは未確認事項を含む。食品衛生法上の位置づけ、化粧品への配合可否、措置命令事例は未確認"
+      ],
+      "industries": ["H"],
+      "industries_sub": [],
+      "media": [],
+      "source_urls": ["https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iyakuhin/koukokukisei/index.html", "https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/assets/representation_cms213_230131_01.pdf"],
+      "source_type": "運用基準",
+      "verified": false
     }
   ]
 }
