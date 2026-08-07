@@ -480,12 +480,12 @@ export default function DiagnosticV2() {
                   <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>リスクスコア</p>
                 </div>
                 <div>
-                  <p style={{ fontSize: 28, fontWeight: 700, margin: 0, color: "var(--ink)" }}>{a.risk_items?.length || 0}</p>
-                  <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>指摘</p>
+                  <p style={{ fontSize: 28, fontWeight: 700, margin: 0, color: "#067647" }}>{a.sayable?.length || 0}</p>
+                  <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>言える切り口</p>
                 </div>
                 <div>
-                  <p style={{ fontSize: 28, fontWeight: 700, margin: 0, color: "var(--ink)" }}>{a.suggestions?.length || 0}</p>
-                  <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>修正案</p>
+                  <p style={{ fontSize: 28, fontWeight: 700, margin: 0, color: "var(--ink)" }}>{a.risk_items?.length || 0}</p>
+                  <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>直す点</p>
                 </div>
               </div>
             </div>
@@ -514,10 +514,26 @@ export default function DiagnosticV2() {
             </div>
           )}
 
-          {/* 指摘 */}
+          {/* 言える範囲（指摘より先に出す） */}
+          {a.sayable?.length > 0 && (
+            <div className="card" style={{ borderColor: "#ABEFC6", background: "#F6FEF9" }}>
+              <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 3px", color: "#067647" }}>この商材で言えること（{a.sayable.length}件）</p>
+              <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 10px" }}>訴求を落とさずに使える切り口です。ここから組み立ててください</p>
+              {a.sayable.map((s, i) => (
+                <div key={i} style={{ padding: "10px 0", borderTop: i > 0 ? "1px solid #D1FADF" : "none" }}>
+                  <p style={{ fontSize: 12.5, fontWeight: 600, margin: "0 0 4px", color: "var(--ink)" }}>{s.angle}</p>
+                  <p style={{ fontSize: 13.5, margin: 0, lineHeight: 1.7, color: "var(--ink)" }}>「{s.example}」</p>
+                  {s.caveat && <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "5px 0 0", lineHeight: 1.6 }}>条件：{s.caveat}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 直す点 */}
           {a.risk_items?.length > 0 && (
             <div className="card">
-              <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>指摘事項（{a.risk_items.length}件）</p>
+              <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 3px" }}>直す点（{a.risk_items.length}件）</p>
+              <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 6px" }}>それぞれに代替案を付けています</p>
               {a.risk_items.map((item, i) => {
                 const ls = LEVEL_STYLE[item.level] || LEVEL_STYLE.MEDIUM;
                 return (
@@ -527,6 +543,12 @@ export default function DiagnosticV2() {
                       <span style={{ fontSize: 14, fontWeight: 600 }}>「{item.expression}」</span>
                     </div>
                     <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 5px", lineHeight: 1.7 }}>{item.reason}</p>
+                    {item.alternative && (
+                      <div style={{ background: "#ECFDF3", borderRadius: 8, padding: "9px 11px", margin: "0 0 6px" }}>
+                        <p style={{ fontSize: 10.5, color: "#067647", margin: "0 0 3px", fontWeight: 700 }}>こう直せば出せる</p>
+                        <p style={{ fontSize: 13, margin: 0, lineHeight: 1.7, color: "var(--ink)" }}>{item.alternative}</p>
+                      </div>
+                    )}
                     <span style={{ fontSize: 11, color: "var(--acc)", background: "var(--acc-bg)", padding: "2px 8px", borderRadius: 4, fontWeight: 600 }}>
                       {item.law}{item.law_id ? `（${item.law_id}）` : ""}
                     </span>
