@@ -106,6 +106,31 @@ check(
   matchRules("塗るだけでシミが消える。", "E", "cosme").length > 0
 );
 
+// 明示的な照合語（data/match_overrides.json）。
+// rule 908「癌」は1文字のため自動導出から落ちており、リスク100・薬機法68条・
+// 刑事罰対象でありながら一度も発火していなかった（2026-08-07 修正）。
+check(
+  "漢字の「癌」で 908 が発火する（明示照合語）",
+  ids("このサプリで癌が治る", "E", "supp").includes(908),
+  `一致: ${JSON.stringify(ids("このサプリで癌が治る", "E", "supp"))}`
+);
+check(
+  "カタカナの「ガン」で 909 が発火する（従来どおり）",
+  ids("このサプリでガンが治る", "E", "supp").includes(909)
+);
+check(
+  "「癌」は業種E以外へ漏れない（908 は industries E 限定）",
+  !ids("癌について解説します", "C", "seitai").includes(908),
+  `一致: ${JSON.stringify(ids("癌について解説します", "C", "seitai"))}`
+);
+check(
+  "明示照合語を持つルールが意図した数だけ存在する",
+  rulebook.rules.filter((r) => Array.isArray(r.match) && r.match.length).length === 1,
+  `match を持つrule_id: ${JSON.stringify(
+    rulebook.rules.filter((r) => Array.isArray(r.match) && r.match.length).map((r) => r.id)
+  )}`
+);
+
 check(
   "無害な文では一致が0件になる",
   matchRules("本日は晴天なり。営業時間は9時から18時です。", "E", "supp").length === 0,
@@ -193,18 +218,31 @@ const known = (label, resolved, detail = "") => {
   }
 };
 
-// (1) 1文字のNG表現は engine.js の足切り（raw.length < 2）で照合対象から落ちる。
-//     rule 908「癌」はリスク100・薬機法68条・刑事罰対象でありながら一度も発火しない。
-//     カタカナの 909「ガン」は2文字なので発火するため、漢字表記だけが素通りする。
-const oneChar = rulebook.rules.filter((r) => {
+// (1) 1文字の照合語になるルールのうち、明示指定（match）を持たないものは
+//     engine.js の足切りで落ちたままになる。908 は 2026-08-07 に救済済み。
+//     rule 120「心（ココロ）」は括弧を除くと「心」1文字で、これも発火しない。
+//     ただし「心」は安心・中心・心地よい等に埋没するため明示指定に向かず、
+//     正本側でNG表現を句に書き直すべきもの（＝まさの判断が要る）。
+const deadOneChar = rulebook.rules.filter((r) => {
+  if (Array.isArray(r.match) && r.match.length) return false;
   const raw = String(r.ng || "").replace(/[　\s×△○＊]+/g, "").trim();
-  return raw.length === 1;
+  if (raw.length === 1) return true;
+  const alts = raw.split(/[／\/・]+/).map((s) => s.replace(/[（(].*?[）)]/g, "").trim());
+  return alts.length > 0 && alts.every((c) => c.length < 2);
 });
 known(
-  "1文字のNG表現が照合対象から落ちる",
-  oneChar.length === 0 && ids("このサプリで癌が治る", "E", "supp").includes(908),
-  `照合されないrule_id: ${JSON.stringify(oneChar.map((r) => ({ id: r.id, ng: r.ng, risk: r.risk })))}` +
-    `\n       「このサプリで癌が治る」の一致: ${JSON.stringify(ids("このサプリで癌が治る", "E", "supp"))}（908 が無い）`
+  "1文字にしかならないNG表現が照合対象から落ちる",
+  deadOneChar.length === 0,
+  `発火しないrule_id: ${JSON.stringify(deadOneChar.map((r) => ({ id: r.id, ng: r.ng, risk: r.risk })))}`
+);
+
+// (1b) ひらがな単独の「がん」を拾うルールが無い。420「がんに効く」421「がん予防」は
+//      句なので「がんが治る」に当たらない。「がん」の2文字照合は「がんばる」に
+//      埋没するため明示指定に向かず、正本へのルール追加が要る。
+known(
+  "ひらがなの「がんが治る」を拾えない",
+  matchRules("このサプリでがんが治る", "E", "supp").length > 0,
+  `「このサプリでがんが治る」の一致: ${JSON.stringify(ids("このサプリでがんが治る", "E", "supp"))}`
 );
 
 // (2) 業種Eに痩身の汎用ルールが無い。611「痩せる／必ず痩せる／運動なしで痩せる」は
