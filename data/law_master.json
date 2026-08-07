@@ -3,7 +3,7 @@
     "version": "v1",
     "created": "2026-07-07",
     "note": "法令マスター。docs/law_master.md を構造化。各ルールは law_ids で本マスターに紐づく。一次ソース主義。業種H（CBD・カンナビノイド関連）は業種タクソノミー未実装のため現時点では診断に適用されない。",
-    "node_count": 29
+    "node_count": 30
   },
   "laws": [
     {
@@ -19,9 +19,18 @@
         "健康食品・雑品が医薬品的効能（疾病の治療・予防、身体組織の機能増強）を標榜すると未承認医薬品広告（68条）と一体で違反",
         "化粧品は効能56項目の範囲外の標榜が本条違反になり得る"
       ],
-      "industries": ["E", "A", "A2", "F", "G"],
+      "industries": [
+        "E",
+        "A",
+        "A2",
+        "F",
+        "G"
+      ],
       "media": [],
-      "source_urls": ["https://www.hokeniryo.metro.tokyo.lg.jp/anzen/iyaku/koukokukisei/bassui", "https://www.pref.kyoto.jp/yakumu/koukoku/yakihoujyoubun.html"],
+      "source_urls": [
+        "https://www.hokeniryo.metro.tokyo.lg.jp/anzen/iyaku/koukokukisei/bassui",
+        "https://www.pref.kyoto.jp/yakumu/koukoku/yakihoujyoubun.html"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -37,9 +46,16 @@
         "承認前の医療機器・医薬品の予告的広告もNG",
         "成分本質・起源・製法・広告内容から総合判断される"
       ],
-      "industries": ["E", "A", "F", "G"],
+      "industries": [
+        "E",
+        "A",
+        "F",
+        "G"
+      ],
       "media": [],
-      "source_urls": ["https://www.pref.kyoto.jp/yakumu/koukoku/yakihoujyoubun.html"],
+      "source_urls": [
+        "https://www.pref.kyoto.jp/yakumu/koukoku/yakihoujyoubun.html"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -54,9 +70,14 @@
         "雑品（例：洗濯石けん）で人体表現（お肌にやさしい等）をすると化粧品該当性が生じ承認・届出の問題になる",
         "SNS・口コミへの人体表現の漏れも該当性判断の対象"
       ],
-      "industries": ["E", "F"],
+      "industries": [
+        "E",
+        "F"
+      ],
       "media": [],
-      "source_urls": ["https://laws.e-gov.go.jp/law/335AC0000000145"],
+      "source_urls": [
+        "https://laws.e-gov.go.jp/law/335AC0000000145"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -73,9 +94,15 @@
         "医薬関係者・病院等の推薦表現の原則禁止",
         "使用体験談は効能効果の保証にわたるものNG"
       ],
-      "industries": ["E", "A2", "F"],
+      "industries": [
+        "E",
+        "A2",
+        "F"
+      ],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/file/06-Seisakujouhou-11120000-Iyakushokuhinkyoku/0000179263.pdf"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/file/06-Seisakujouhou-11120000-Iyakushokuhinkyoku/0000179263.pdf"
+      ],
       "source_type": "運用基準",
       "verified": true
     },
@@ -93,7 +120,10 @@
       ],
       "industries": [],
       "media": [],
-      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/fair_labeling/representation_regulation/", "https://laws.e-gov.go.jp/law/337AC0000000134"],
+      "source_urls": [
+        "https://www.caa.go.jp/policies/policy/representation/fair_labeling/representation_regulation/",
+        "https://laws.e-gov.go.jp/law/337AC0000000134"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -111,7 +141,9 @@
       ],
       "industries": [],
       "media": [],
-      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/fair_labeling/representation_regulation/misleading_representation/not_demonstrated_ad"],
+      "source_urls": [
+        "https://www.caa.go.jp/policies/policy/representation/fair_labeling/representation_regulation/misleading_representation/not_demonstrated_ad"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -129,8 +161,15 @@
         "責任を負うのは広告主（事業者）"
       ],
       "industries": [],
-      "media": ["sns", "article", "video", "review"],
-      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/fair_labeling/stealth_marketing/"],
+      "media": [
+        "sns",
+        "article",
+        "video",
+        "review"
+      ],
+      "source_urls": [
+        "https://www.caa.go.jp/policies/policy/representation/fair_labeling/stealth_marketing/"
+      ],
       "source_type": "告示",
       "verified": true
     },
@@ -146,9 +185,13 @@
         "趣旨＝誇大広告を信じて適切な診療機会を失うことの防止",
         "「痩せる」「若返る」「病気が治る」等の健康保持増進効果の誇大表示が典型"
       ],
-      "industries": ["E"],
+      "industries": [
+        "E"
+      ],
       "media": [],
-      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/"],
+      "source_urls": [
+        "https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -166,9 +209,15 @@
         "比較優良（日本一・最高峰・有名人も来院）NG、「絶対安全」「必ず治る」NG",
         "広告該当性＝①誘引性 ②特定性（バナー・リスティングは広告、学術記事は非広告になり得る）"
       ],
-      "industries": ["A", "A2"],
+      "industries": [
+        "A",
+        "A2"
+      ],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/kokokukisei/index.html", "https://www.mhlw.go.jp/content/001439423.pdf"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/kokokukisei/index.html",
+        "https://www.mhlw.go.jp/content/001439423.pdf"
+      ],
       "source_type": "GL",
       "verified": true
     },
@@ -184,9 +233,13 @@
         "医行為（医療・診療・投薬）の実施・暗示はNG。異常時は嘱託医・嘱託医療機関へ",
         "広告可能：名称・所在地・管理者氏名・業務時間・従事助産師情報・嘱託医/嘱託医療機関 等"
       ],
-      "industries": ["A2"],
+      "industries": [
+        "A2"
+      ],
       "media": [],
-      "source_urls": ["https://laws.e-gov.go.jp/law/340AC0000000141"],
+      "source_urls": [
+        "https://laws.e-gov.go.jp/law/340AC0000000141"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -201,9 +254,13 @@
         "承認された効能効果の範囲を超える標榜NG",
         "L-YAKKI-66/68・L-TEKISEI がそのまま適用される"
       ],
-      "industries": ["A2"],
+      "industries": [
+        "A2"
+      ],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/file/06-Seisakujouhou-11120000-Iyakushokuhinkyoku/0000179263.pdf"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/file/06-Seisakujouhou-11120000-Iyakushokuhinkyoku/0000179263.pdf"
+      ],
       "source_type": "法律",
       "verified": false
     },
@@ -222,10 +279,17 @@
         "罰則：30万円以下の罰金（第30条）",
         "あはき・柔整広告ガイドライン（令和7年2月18日付）が運用指針"
       ],
-      "industries": ["B"],
-      "industries_sub": ["judo"],
+      "industries": [
+        "B"
+      ],
+      "industries_sub": [
+        "judo"
+      ],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/content/10800000/001412674.pdf", "https://www.mhlw.go.jp/content/10800000/001412682.pdf"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/content/10800000/001412674.pdf",
+        "https://www.mhlw.go.jp/content/10800000/001412682.pdf"
+      ],
       "source_type": "法律",
       "last_revised": "2025-02-18",
       "verified": true
@@ -243,10 +307,17 @@
         "療養費支給申請可の旨は医師同意が必要な旨の明示が条件",
         "あはき・柔整広告ガイドライン（令和7年更新）が運用指針"
       ],
-      "industries": ["B"],
-      "industries_sub": ["ahaki"],
+      "industries": [
+        "B"
+      ],
+      "industries_sub": [
+        "ahaki"
+      ],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/content/10800000/001412674.pdf", "https://laws.e-gov.go.jp/law/402M50000100019"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/content/10800000/001412674.pdf",
+        "https://laws.e-gov.go.jp/law/402M50000100019"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -264,9 +335,14 @@
         "効果・改善の断定は景表法の優良誤認・不実証広告規制で捕捉される",
         "「骨盤矯正」「猫背矯正」等も効果の実証根拠が問われる"
       ],
-      "industries": ["C"],
+      "industries": [
+        "C"
+      ],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/content/10800000/001412674.pdf", "https://www.meti.go.jp/policy/mono_info_service/healthcare/downloadfiles/relaxationguideline.pdf"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/content/10800000/001412674.pdf",
+        "https://www.meti.go.jp/policy/mono_info_service/healthcare/downloadfiles/relaxationguideline.pdf"
+      ],
       "source_type": "GL",
       "verified": true
     },
@@ -283,9 +359,19 @@
         "クーリングオフ8日間、期間経過後も理由不問で中途解約可（損害賠償上限＝エステは2万円 or 残額10%の低い方）",
         "誇大広告の禁止。解約条件を不利に誤認させる表示NG"
       ],
-      "industries": ["D", "A"],
-      "media": ["lp", "hp", "print", "mail"],
-      "source_urls": ["https://www.no-trouble.caa.go.jp/what/continuousservices/"],
+      "industries": [
+        "D",
+        "A"
+      ],
+      "media": [
+        "lp",
+        "hp",
+        "print",
+        "mail"
+      ],
+      "source_urls": [
+        "https://www.no-trouble.caa.go.jp/what/continuousservices/"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -303,10 +389,17 @@
         "「肌」「皮膚」の使い分け可、「補い保つ」は「補う」「保つ」単独でも可",
         "医薬部外品（薬用）は承認効能の範囲内で化粧品より広い表現が可能"
       ],
-      "industries": ["E"],
-      "industries_sub": ["cosme", "quasi"],
+      "industries": [
+        "E"
+      ],
+      "industries_sub": [
+        "cosme",
+        "quasi"
+      ],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/web/t_doc?dataId=00tb7518&dataType=1"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/web/t_doc?dataId=00tb7518&dataType=1"
+      ],
       "source_type": "政省令",
       "verified": true
     },
@@ -322,10 +415,18 @@
         "使用前後写真はメーキャップ効果等の範囲でのみ可",
         "「アンチエイジング」は年齢に応じたお手入れの意味でのみ可"
       ],
-      "industries": ["E", "F"],
-      "industries_sub": ["cosme", "quasi"],
+      "industries": [
+        "E",
+        "F"
+      ],
+      "industries_sub": [
+        "cosme",
+        "quasi"
+      ],
       "media": [],
-      "source_urls": ["https://www.jcia.org/user/common/download/business/advertising/JCIA20200615_ADguide.pdf"],
+      "source_urls": [
+        "https://www.jcia.org/user/common/download/business/advertising/JCIA20200615_ADguide.pdf"
+      ],
       "source_type": "自主基準",
       "verified": true
     },
@@ -343,10 +444,17 @@
         "対象は疾病非罹患者（未成年・妊産婦・授乳婦を除く）",
         "トクホ（個別許可制）との混同表示NG"
       ],
-      "industries": ["E"],
-      "industries_sub": ["supp", "func"],
+      "industries": [
+        "E"
+      ],
+      "industries_sub": [
+        "supp",
+        "func"
+      ],
       "media": [],
-      "source_urls": ["https://www.caa.go.jp/policies/policy/food_labeling/foods_with_function_claims"],
+      "source_urls": [
+        "https://www.caa.go.jp/policies/policy/food_labeling/foods_with_function_claims"
+      ],
       "source_type": "GL",
       "verified": true
     },
@@ -362,9 +470,18 @@
         "アフィリエイター自身も薬機法66条（何人も規制）の対象",
         "ステマ告示と併走（PR明示）"
       ],
-      "industries": ["F"],
-      "media": ["article", "sns", "lp", "video"],
-      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/meeting_materials/review_meeting_003/assets/representation_cms216_220215_01.pdf"],
+      "industries": [
+        "F"
+      ],
+      "media": [
+        "article",
+        "sns",
+        "lp",
+        "video"
+      ],
+      "source_urls": [
+        "https://www.caa.go.jp/policies/policy/representation/meeting_materials/review_meeting_003/assets/representation_cms216_220215_01.pdf"
+      ],
       "source_type": "報告書",
       "verified": true
     },
@@ -381,10 +498,16 @@
         "2024/4改正の特例：問い合わせ先・通常必要とされる診療内容・主なリスク及び副作用・費用を全て併記すれば広告可",
         "「必ず治る」等の効果保証・誇大は不可"
       ],
-      "industries": ["G"],
-      "industries_sub": ["vet"],
+      "industries": [
+        "G"
+      ],
+      "industries_sub": [
+        "vet"
+      ],
       "media": [],
-      "source_urls": ["https://www.maff.go.jp/j/syouan/tikusui/zyui/koukoku.html"],
+      "source_urls": [
+        "https://www.maff.go.jp/j/syouan/tikusui/zyui/koukoku.html"
+      ],
       "source_type": "法律",
       "last_revised": "2024-04-01",
       "verified": true
@@ -401,10 +524,21 @@
         "5項目の表示義務（名称/原材料/賞味期限/事業者/原産国）",
         "有害物質・製造方法の基準あり"
       ],
-      "industries": ["G"],
-      "industries_sub": ["petfood"],
-      "media": ["package", "lp", "hp"],
-      "source_urls": ["https://www.env.go.jp/nature/dobutsu/aigo/petfood/index.html", "https://laws.e-gov.go.jp/law/420AC0000000083"],
+      "industries": [
+        "G"
+      ],
+      "industries_sub": [
+        "petfood"
+      ],
+      "media": [
+        "package",
+        "lp",
+        "hp"
+      ],
+      "source_urls": [
+        "https://www.env.go.jp/nature/dobutsu/aigo/petfood/index.html",
+        "https://laws.e-gov.go.jp/law/420AC0000000083"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -420,10 +554,18 @@
         "「無添加」は添加物便覧記載の当該添加物を一切不使用と確認できる場合限定＋何が無添加か（原材料名・添加物名）の併記必須",
         "人間用食品と誤認させる表示・「国産」等の原産国誤認に注意"
       ],
-      "industries": ["G"],
-      "industries_sub": ["petfood", "petsupp"],
+      "industries": [
+        "G"
+      ],
+      "industries_sub": [
+        "petfood",
+        "petsupp"
+      ],
       "media": [],
-      "source_urls": ["https://pffta.org/label/required_fair_competition/", "https://www.jfftc.org/kiyaku/pdf/g01_H_pet.pdf"],
+      "source_urls": [
+        "https://pffta.org/label/required_fair_competition/",
+        "https://www.jfftc.org/kiyaku/pdf/g01_H_pet.pdf"
+      ],
       "source_type": "自主基準",
       "verified": true
     },
@@ -440,10 +582,20 @@
         "ペットフード公正取引協議会「薬事表現に関するガイドライン」参照",
         "「関節の健康維持をサポート」等、健康維持の範囲に留める"
       ],
-      "industries": ["G"],
-      "industries_sub": ["petfood", "petsupp", "petgoods"],
+      "industries": [
+        "G"
+      ],
+      "industries_sub": [
+        "petfood",
+        "petsupp",
+        "petgoods"
+      ],
       "media": [],
-      "source_urls": ["https://www.maff.go.jp/j/kokuji_tuti/tuti/t0000836.html", "https://pffta.org/label/guidelines/", "https://laws.e-gov.go.jp/law/416M60000200107"],
+      "source_urls": [
+        "https://www.maff.go.jp/j/kokuji_tuti/tuti/t0000836.html",
+        "https://pffta.org/label/guidelines/",
+        "https://laws.e-gov.go.jp/law/416M60000200107"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -459,10 +611,17 @@
         "「永久脱毛」は医療行為（医療機関のみ）。エステ脱毛は減毛・抑毛の範囲",
         "承認済み家庭用医療機器は承認効能の範囲内で標榜可"
       ],
-      "industries": ["E", "D"],
-      "industries_sub": ["device"],
+      "industries": [
+        "E",
+        "D"
+      ],
+      "industries_sub": [
+        "device"
+      ],
       "media": [],
-      "source_urls": ["https://laws.e-gov.go.jp/law/335AC0000000145"],
+      "source_urls": [
+        "https://laws.e-gov.go.jp/law/335AC0000000145"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -478,10 +637,17 @@
         "体験談は効果の裏付けにならない（個人の感想である旨の打消しでは免責されない）",
         "ビフォーアフター写真も優良誤認の典型"
       ],
-      "industries": ["E"],
-      "industries_sub": ["supp", "func"],
+      "industries": [
+        "E"
+      ],
+      "industries_sub": [
+        "supp",
+        "func"
+      ],
       "media": [],
-      "source_urls": ["https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/assets/representation_cms213_230131_01.pdf"],
+      "source_urls": [
+        "https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/assets/representation_cms213_230131_01.pdf"
+      ],
       "source_type": "運用基準",
       "verified": true
     },
@@ -498,10 +664,16 @@
         "第二種大麻草採取栽培者＝医薬品の原料の採取（厚生労働大臣免許）",
         "改正前の資料・記事は部位規制を前提にしているため、そのまま引用すると誤りになる"
       ],
-      "industries": ["H"],
+      "industries": [
+        "H"
+      ],
       "industries_sub": [],
       "media": [],
-      "source_urls": ["https://laws.e-gov.go.jp/law/323AC0000000124/20241212_505AC0000000084", "https://www.mhlw.go.jp/stf/newpage_43079.html", "https://www.mhlw.go.jp/content/001159661.pdf"],
+      "source_urls": [
+        "https://laws.e-gov.go.jp/law/323AC0000000124/20241212_505AC0000000084",
+        "https://www.mhlw.go.jp/stf/newpage_43079.html",
+        "https://www.mhlw.go.jp/content/001159661.pdf"
+      ],
       "source_type": "法律",
       "verified": true
     },
@@ -513,18 +685,60 @@
       "authority": "厚生労働省",
       "summary": "製品中のΔ9-THCが定められた残留限度値を超える場合、その製品は麻薬に該当する。限度値は製品の形態により3区分。",
       "key_points": [
-        "油脂・粉末（常温で液体のものを含む）：10 ppm（10mg/kg）",
-        "水溶液：0.10 ppm（0.10mg/kg）",
-        "その他の製品：1 ppm（1mg/kg）",
+        "油脂（常温で液体のものを含む）・粉末：10 ppm",
+        "水溶液：0.10 ppm",
+        "その他の製品：1 ppm",
         "限度値を超える製品は麻薬に該当し、輸入・所持・譲渡が規制される",
+        "政令第2条の用語解釈：油脂＝グリセリンと脂肪酸が結合した化合物を90%以上含むもの／粉末＝日本薬局方における粗末以下の粒度／水溶液＝水に溶解又は分散させた液のうち粘度100mPa･s未満かつ油脂含有率10.0%未満のものに限る／常温＝15〜25℃",
+        "区分の具体例（10ppm）：CBDオイル、ヘンプシードオイル、化粧オイル、CBDパウダー、プロテイン",
+        "区分の具体例（0.10ppm）：清涼飲料水、アルコール飲料、化粧水、牛乳・植物性飲料（コロイド溶液）",
+        "区分の具体例（1ppm）：菓子類、錠剤、バター、電子タバコ、シャンプー、リンス、乳液、クリーム、バーム、ゼリー",
+        "化粧品は剤形で限度値が変わる。化粧オイル10ppm／化粧水0.10ppm／乳液・クリーム1ppm＝同一ブランドでもアイテムごとに基準が違う",
+        "常温での状態で区分する（冷凍販売でも常温で液体なら液体として判断）。混和せず分離できるものは分離後で判断（カプセルは内容物、シート化粧品は浸潤した液体で判断）",
         "「THCフリー」「ノンTHC」等の表示は、限度値以下であることと同義ではない。根拠となる成分分析の裏付けが必要"
       ],
-      "industries": ["H"],
+      "industries": [
+        "H"
+      ],
       "industries_sub": [],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/stf/newpage_43079.html", "https://www.mhlw.go.jp/content/001159661.pdf"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/stf/newpage_43079.html",
+        "https://www.mhlw.go.jp/content/001159661.pdf",
+        "https://www.ncd.mhlw.go.jp/dl_data/cbd/kubun_example_20260601.pdf"
+      ],
       "source_type": "法律",
-      "verified": true
+      "verified": true,
+      "verified_date": "2026-08-07"
+    },
+    {
+      "id": "L-CBN-SHITEI",
+      "category": "指定薬物",
+      "title": "CBN（カンナビノール）の指定薬物指定",
+      "article": "医薬品医療機器等法（指定薬物制度）／指定薬物を指定する省令",
+      "authority": "厚生労働省 医薬局 監視指導・麻薬対策課",
+      "summary": "CBN（カンナビノール）は令和8年6月1日（2026-06-01）より指定薬物に指定され、製造・輸入・販売・所持・使用等が禁止された。本日（2026-08-07）時点で既に施行済み。CBNは睡眠訴求の製品で流通していたため、既存の商品ページ・記事・アフィリエイト記事が違法状態のまま残存している可能性が高い。",
+      "key_points": [
+        "施行日：令和8年6月1日（2026-06-01）。厚労省の記載は「製造、輸入、販売、所持、使用等が禁止される」",
+        "指定理由：薬事審議会 指定薬物部会において「精神毒性を有する蓋然性が高く、かつ、人の身体に使用された場合に保健衛生上の危害が発生するおそれがある物」と認められた",
+        "厚労省は保有するCBN製品の廃棄を求めている（盗難防止と適切な廃棄）",
+        "例外：他に代替できる治療法がない難治性の疾患・障害の診断を受け使用の必要性が認められる者は、診断書・報告書・学会意見書発行依頼書の提出により確認書の交付を受けて継続使用が可能。窓口は厚生労働省医薬局監視指導・麻薬対策課CBN担当",
+        "麻薬取締部の輸入事前確認の対象成分からCBNは外れた。2026-06-01改訂の手引きでは「CBD関連製品とは、CBD（カンナビジオール）又はCBG（カンナビゲロール）を含有する製品」と定義されている（従来はCBNを含む3成分）",
+        "広告実務：CBN配合を訴求する表示は、効能の適否以前に製品自体の流通が禁止されているため、掲載継続そのものが問題になる。過去記事・比較記事・アフィリエイトリンクの棚卸しが必要",
+        "未確認：禁止行為の根拠条番号（薬機法76条の4等）と省令の公布日、経過措置の有無は本ページに明記がなく未確認"
+      ],
+      "industries": [
+        "H"
+      ],
+      "industries_sub": [],
+      "media": [],
+      "source_urls": [
+        "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iyakuhin/yakubuturanyou/other/CBN_shitei.html",
+        "https://www.ncd.mhlw.go.jp/cbd.html"
+      ],
+      "source_type": "省令",
+      "verified": true,
+      "verified_date": "2026-08-07"
     },
     {
       "id": "L-CBD-IMPORT",
@@ -532,20 +746,32 @@
       "title": "CBD関連製品の輸入時の事前確認",
       "article": "厚生労働省 地方厚生局麻薬取締部の運用",
       "authority": "厚生労働省 医薬局 監視指導・麻薬対策課／麻薬取締部",
-      "summary": "CBD・CBG・CBNを含む製品について、麻薬に該当しないことの事前確認を麻薬取締部へ依頼できる。成分分析書の提出が必要で、回答まで1〜2か月を要する。",
+      "summary": "CBD又はCBGを含有する製品について、麻薬に該当しないことの事前確認を麻薬取締部へ依頼できる。成分分析書の提出が必要で、回答まで1〜2か月を要する。2026-06-01改訂版の手引きでCBNは対象から外れた（CBNは指定薬物に指定されたため。L-CBN-SHITEI 参照）。",
       "key_points": [
-        "対象成分はCBD（カンナビジオール）、CBG（カンナビゲロール）、CBN（カンナビノール）",
-        "厚労省の記載では、この事前確認は輸入に際して必ず必要な法定事項ではない（任意の事前確認）。「輸入許可」ではない点に注意",
-        "成分分析書には定められた記載事項があり、不備があると再提出となりさらに時間を要する",
-        "受付はメールのみ。回答まで1〜2か月",
-        "広告で「厚労省の確認済み」「輸入許可取得」等と表示すると、事実と異なる表示になり得る"
+        "対象成分はCBD（カンナビジオール）又はCBG（カンナビゲロール）の2成分。CBNは2026-06-01改訂で対象外（指定薬物化）",
+        "厚労省の原文：「この事前確認手続きは、当該製品の輸入に際して必ず必要な法定事項ではありません」＝任意の事前確認であり「輸入許可」ではない",
+        "厚労省の原文：回答を得ても「厚生労働省の“許可”や“認証”を受けた」等と表示することはできず、厚労省のロゴを付すこともできない",
+        "厚労省の原文：麻薬取締部の回答は「資料上は麻薬に該当しない」ことの確認にすぎず、税関等の検査は免除されない",
+        "成分分析書の記載事項①〜⑦：①主成分・含有成分の分析結果を含む成分一覧 ②製品の形状分類（1油脂／2粉末／3水溶液／4その他＝具体的形状を記載） ③分析日又は成分分析書作成日 ④ロット（バッチ）番号等の製品特定番号 ⑤分析施設の責任者の署名及び肩書き ⑥分析方法（LC-MS/MS、LC-QTOF-MS等） ⑦定量限界値(LOQ)及び検出限界値(LOD)の両方",
+        "形状分類が日本の規格（1〜4）に合わないと確認できず再提出になる。手引き末尾に英訳版（Requirements for the Certificate of Analysis）が付属し、海外の製造元・分析機関へ渡せる",
+        "受付はメールのみ（CHECKCBD●mhlw.go.jp／●を@に置換）。電話での質問は原則不可。10MB超のメールは受信不可",
+        "件名ルール：「初回メール送信年月日（西暦8桁）・輸入予定年月日（西暦8桁）・製品数・輸入者氏名（企業名）」。1製品1通。ロット・バッチが違えば別製品として扱う",
+        "輸入の都度、新規の確認依頼が必要（同一製品・同一ロットでも輸入日が異なれば別の輸入）",
+        "手続きの主体は輸入者。輸出者・輸入代行業者・通関業者が行うものではない",
+        "回答まで1〜2か月。広告で「厚労省の確認済み」「輸入許可取得」等と表示すると事実と異なる表示になり得る"
       ],
-      "industries": ["H"],
+      "industries": [
+        "H"
+      ],
       "industries_sub": [],
       "media": [],
-      "source_urls": ["https://www.ncd.mhlw.go.jp/cbd.html", "https://www.ncd.mhlw.go.jp/dl_data/cbd/cbdtebiki_20241212.pdf"],
+      "source_urls": [
+        "https://www.ncd.mhlw.go.jp/cbd.html",
+        "https://www.ncd.mhlw.go.jp/dl_data/cbd/cbdtebiki_20260601.pdf"
+      ],
       "source_type": "運用基準",
-      "verified": true
+      "verified": true,
+      "verified_date": "2026-08-07"
     },
     {
       "id": "L-CBD-AD",
@@ -553,20 +779,29 @@
       "title": "CBD製品の広告に適用される規制の整理",
       "article": "薬機法66条・68条／健康増進法65条／景表法5条・7条",
       "authority": "厚生労働省・消費者庁",
-      "summary": "CBD固有の広告規制は確認できていない。既存の枠組みが適用される。医薬品的効能効果の標榜は未承認医薬品広告に該当し得る。食品として販売する場合は健康食品の留意事項が適用される。",
+      "summary": "CBD固有の広告規制は確認できていない。既存の枠組み（薬機法66/68条・健康増進法65条・景表法5条/7条）が適用される。CBNについては指定薬物化により製品の流通自体が禁止されている点が広告以前の前提になる。",
       "key_points": [
         "医薬品的効能効果（不眠・不安・疼痛・てんかん等の疾病の治療予防）の標榜は、未承認医薬品の広告に該当し得る",
         "食品として販売する場合、健康保持増進効果の誇大表示は健康増進法65条の対象",
         "体感・効果の訴求は景表法7条2項（不実証広告規制）で合理的根拠の提出を求められ得る",
         "海外の承認薬（エピディオレックス等）を引用して国内製品の効果を示唆する手法は、未承認医薬品広告のリスクが高い",
-        "※本ノードは未確認事項を含む。食品衛生法上の位置づけ、化粧品への配合可否、措置命令事例は未確認"
+        "化粧品：カンナビジオールは日本化粧品工業会の化粧品成分表示名称リストに収載され、表示名称は「カンナビジオール」（2026-08-07 確認。ただし出典は二次情報のため一次情報での裏取りが必要）",
+        "CBN配合の訴求は、効能の適否以前に製品の流通自体が禁止されている（L-CBN-SHITEI）。過去記事・比較記事の棚卸しが必要",
+        "未確認：CBD製品に対する景表法の措置命令事例は、消費者庁の公表資料で特定できなかった（2026-08-07 時点）",
+        "未確認：食品衛生法上のCBDの位置づけ（非医薬品リストとの関係）、化粧品への配合可否の一次情報、都道府県ごとの運用差"
       ],
-      "industries": ["H"],
+      "industries": [
+        "H"
+      ],
       "industries_sub": [],
       "media": [],
-      "source_urls": ["https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iyakuhin/koukokukisei/index.html", "https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/assets/representation_cms213_230131_01.pdf"],
+      "source_urls": [
+        "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iyakuhin/koukokukisei/index.html",
+        "https://www.caa.go.jp/policies/policy/representation/extravagant_advertisement/assets/representation_cms213_230131_01.pdf"
+      ],
       "source_type": "運用基準",
-      "verified": false
+      "verified": false,
+      "verified_date": "2026-08-07"
     }
   ]
 }
