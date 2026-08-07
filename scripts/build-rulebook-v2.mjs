@@ -19,6 +19,13 @@ const LAW_PATTERNS = [
   [/景表法_?第5条第3号/, "L-STEMA"],
   [/景品?表示法|景表法/, "L-KEIHYO-5"],
   [/食品表示法_?機能性表示食品|機能性表示/, "L-KINOSEI"],
+  // v18 追加：ペット・獣医療・医療法。「獣医療法」は「医療法」の部分一致を含むため必ず先に置く
+  [/獣医療法/, "L-VET-17"],
+  [/動物用医薬品等広告適正化基準/, "L-VET-DRUG"],
+  [/ペットフード安全法/, "L-PF-SAFETY"],
+  [/ペットフード公正競争規約/, "L-PF-FAIR"],
+  [/医療広告GL|医療広告ガイドライン/, "L-MED-AD"],
+  [/医療法/, "L-MED-AD"],
 ];
 
 function toLawIds(lawStr) {
@@ -46,6 +53,10 @@ function toIndustry(genre) {
   if (g === "医療広告_処方箋医薬品") return { industries: ["A", "A2"], subs: [] };
   if (g.startsWith("医療広告")) return { industries: ["A"], subs: [] };
   if (g.startsWith("医療機器")) return { industries: ["E", "D"], subs: [] };
+  // v18 追加ジャンル：ペット・獣医療 → G、薬局/助産所 → A2、広告制作 → F
+  if (g.startsWith("ペット") || g.startsWith("獣医療")) return { industries: ["G"], subs: [] };
+  if (g.startsWith("薬局") || g.startsWith("助産所")) return { industries: ["A2"], subs: [] };
+  if (g.startsWith("広告制作")) return { industries: ["F"], subs: [] };
   return { industries: [], subs: [] };
 }
 
@@ -56,13 +67,22 @@ function genreLawIds(genre) {
   if (g === "医療広告_処方箋医薬品") return ["L-MED-AD", "L-PHARM"];
   if (g.startsWith("医療広告")) return ["L-MED-AD"];
   if (g.startsWith("医療機器")) return ["L-MED-DEVICE"];
+  // v18 追加ジャンル
+  if (g === "ペット_表示区分") return ["L-PF-FAIR", "L-KEIHYO-5"];
+  if (g === "ペット_法定表示") return ["L-PF-SAFETY"];
+  if (g.startsWith("ペット")) return ["L-VET-DRUG", "L-KEIHYO-5"];
+  if (g.startsWith("獣医療")) return ["L-VET-17"];
+  if (g.startsWith("薬局")) return ["L-PHARM", "L-TEKISEI"];
+  if (g.startsWith("助産所")) return ["L-MID", "L-MED-AD"];
+  if (g.startsWith("広告制作")) return ["L-AFFILI", "L-KEIHYO-5"];
   return [];
 }
 
 // ---- 広告診断に載せないジャンル ----
 // 「食品表示_無添加（パッケージ）」は消費者庁の不使用表示ガイドライン由来で、
 // 対象は容器包装の表示のみ。広告は規制対象外なので広告診断へ機械適用しない。
-const EXCLUDED_GENRE = /^食品表示_/;
+// 「ペット_法定表示」もペットフード安全法に基づく容器包装表示専用のため同様に除外する。
+const EXCLUDED_GENRE = /^(食品表示_|ペット_法定表示)/;
 
 // 照合語の明示指定。NG表現からの自動導出が破綻するルールだけを救う。
 // 詳細と運用ルールは data/match_overrides.json の _note / _rules を参照。
