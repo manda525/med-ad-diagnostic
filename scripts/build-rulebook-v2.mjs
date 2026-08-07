@@ -54,6 +54,12 @@ function genreLawIds(genre) {
   return [];
 }
 
+// 照合語の明示指定。NG表現からの自動導出が破綻するルールだけを救う。
+// 詳細と運用ルールは data/match_overrides.json の _note / _rules を参照。
+const overrides = JSON.parse(
+  fs.readFileSync(path.join(root, "data", "match_overrides.json"), "utf8")
+);
+
 function convert(row, src_) {
   const [id, ng, risk, genre, comment, ok, law, jcia] = row;
   const { industries, subs } = toIndustry(genre);
@@ -62,8 +68,10 @@ function convert(row, src_) {
   for (const gid of genreLawIds(genre)) if (!law_ids.includes(gid)) law_ids.push(gid);
   // 補完: 健康食品で効能系なのに法令欄が空のケース → 66条を既定に
   if (law_ids.length === 0 && industries.includes("E")) law_ids.push("L-YAKKI-66");
+  const ov = overrides[String(id)];
   return {
     id, ng, risk, genre,
+    ...(ov?.terms?.length ? { match: ov.terms } : {}),
     comment: comment || "",
     ok: ok || "",
     law: law || "",
