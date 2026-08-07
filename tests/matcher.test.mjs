@@ -137,6 +137,24 @@ check(
   `一致: ${JSON.stringify(ids("本日は晴天なり。営業時間は9時から18時です。", "E", "supp"))}`
 );
 
+// v17 で取り込んだ 637-640。業種タグが正しく効いているかも併せて見る。
+check(
+  "637（処方箋なし供給）が業種A2・薬局で発火する",
+  ids("処方箋なしOKでお薬をお届けします", "A2", "pharmacy").includes(637),
+  `一致: ${JSON.stringify(ids("処方箋なしOKでお薬をお届けします", "A2", "pharmacy"))}`
+);
+check(
+  "637 は業種E（物販）へ漏れない",
+  !ids("処方箋なしOKでお薬をお届けします", "E", "supp").includes(637)
+);
+check(
+  "638（認証効能の範囲超過）が業種D・エステで発火する",
+  matchRules(
+    "認証・承認された使用目的・効能効果の範囲を超える疾病の治癒・緩和の標榜",
+    "D", "esthe"
+  ).some((r) => r.id === 638)
+);
+
 // ---------------------------------------------------------------
 console.log("\n[Group C] 中立文コーパス：横断ルールが発火しないこと");
 // ---------------------------------------------------------------
@@ -198,6 +216,24 @@ check("law_ids を持たないルールが無い", noLaw.length === 0,
   noLaw.length ? `rule_id: ${JSON.stringify(noLaw.map((r) => r.id).slice(0, 10))}` : "");
 
 check(`RULE_COUNT が rulebook の件数と一致（${RULE_COUNT}件）`, RULE_COUNT === rulebook.rules.length);
+
+// rulebook.json の CS 配列には C5-01〜C5-58 の完全重複がある。ビルド時に落として
+// いるので、v2 側に重複IDが残っていてはいけない（残ると同じ指摘が二重に出る）。
+const dupIds = (() => {
+  const seen = new Set(), dup = [];
+  for (const r of rulebook.rules) {
+    const k = String(r.id);
+    if (seen.has(k)) dup.push(k); else seen.add(k);
+  }
+  return dup;
+})();
+check("rule_id に重複が無い", dupIds.length === 0,
+  `重複: ${dupIds.length}件 ${JSON.stringify(dupIds.slice(0, 5))}`);
+
+check(
+  `ビルドが落とした件数を meta に記録している（重複 ${rulebook.meta?.deduped ?? "?"}件）`,
+  typeof rulebook.meta?.deduped === "number"
+);
 
 console.log(`\n  参考：横断ルール（全業種適用）は ${CROSS.length} 件`);
 
