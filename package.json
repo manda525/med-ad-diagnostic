@@ -9,7 +9,8 @@
     "build:rulebook": "node scripts/build-rulebook-v2.mjs",
     "test:security": "node tests/usage.test.mjs",
     "test:matcher": "node tests/matcher.test.mjs",
-    "test": "npm run test:security && npm run test:matcher"
+    "test": "npm run test:security && npm run test:matcher",
+    "eval": "node scripts/eval.mjs"
   },
   "dependencies": {
     "next": "^14.2.5",
