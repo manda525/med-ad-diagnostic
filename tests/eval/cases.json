@@ -1,0 +1,386 @@
+{
+  "_about": "診断品質の評価セット。誤検知率と見逃し率を測るための固定入力。ROADMAP の M2。",
+  "_status": "全ケースの expect は Claude の提案（label_status: proposed）。まさが確認して confirmed へ変えたものだけを正解として扱う。confirmed になるまで、この数字を対外に出さない。",
+  "_how_to_review": "npm run eval で tests/eval/REVIEW.md が生成される。まさはそれを読み、判定が妥当なら cases.json の label_status を confirmed に、違えば expect を直す。",
+  "_layers": {
+    "matcher": "ルール照合だけを見る。AIを呼ばないので無料。must_match / must_not_match で判定する",
+    "diagnosis": "AIを呼んで最終判定まで見る。課金が発生するので既定では走らない（npm run eval -- --ai）。judgment で判定する"
+  },
+  "_judgment_values": ["修正必須", "要修正", "軽微修正", "問題なし"],
+  "_difficulty": {
+    "easy": "明確に黒、または明確に白。ここを外すなら根本的な問題",
+    "hard": "グレー。打消し表示、限定解除、届出範囲、体験談の扱いなど。モデル選択の判断はここで差が出るはず"
+  },
+  "_updated": "2026-08-07",
+
+  "cases": [
+    {
+      "id": "E-supp-001",
+      "text": "飲むだけで痩せる。運動も食事制限も不要で、1か月で必ず5kg減ります。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "健康食品の痩身効果の断定。薬機法66条1項の誇大広告かつ医薬品的効能効果。「必ず」の保証表現も景表法5条1号。",
+      "note": "2026-08-07 の実測では業種E・suppでルール一致が0件だった（611が業種B/C/D限定のため）。ルール層の穴を測るケース。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-supp-002",
+      "text": "このサプリで癌が治る。抗がん剤に頼らない選択を。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須", "must_match": [908] },
+      "why": "疾病の治療標榜。未承認医薬品の広告として薬機法68条違反で刑事罰対象。",
+      "note": "2026-08-07 まで rule 908「癌」が一度も発火していなかった（PR #26 で修正）。回帰ケース。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-supp-003",
+      "text": "このサプリでがんが治ると評判です。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "E-supp-002 のひらがな表記。法的評価は同じでなければおかしい。",
+      "note": "ルール層では拾えない（420「がんに効く」421「がん予防」は句なので当たらない）。表記ゆれでAIの判定が変わらないかを見る。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-supp-004",
+      "text": "血糖値が気になる方へ。飲み続けると血糖値が下がり、糖尿病の予防になります。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "疾病名を挙げた予防効果の標榜。医薬品的効能効果。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-func-005",
+      "text": "本品にはGABAが含まれます。GABAには一時的な精神的ストレスを緩和する機能があることが報告されています。届出番号 X000。",
+      "industry": "E", "sub": "func", "media": "lp",
+      "difficulty": "hard",
+      "expect": { "judgment": "問題なし" },
+      "why": "機能性表示食品の届出表示の範囲内。届出番号も明示されている。これを黒と判定するなら誤検知。",
+      "note": "白側の代表ケース。誤検知率の主要な測定点。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-func-006",
+      "text": "本品にはL-テアニンが含まれます。L-テアニンには、睡眠の質を高めることが報告されています。",
+      "industry": "E", "sub": "func", "media": "lp",
+      "difficulty": "hard",
+      "expect": { "judgment": "要修正" },
+      "why": "他社の届出表示をそのまま引用し、自社品の効能であるかのように読ませている。届出者名・製品名・届出番号と「当方の製品のものではない」を同一段落に置く必要がある（rule 640）。",
+      "note": "E-func-005 との違いは「自社の届出かどうか」だけ。ここを区別できるかが難判定。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-supp-007",
+      "text": "L-テアニンは血液脳関門を通過し脳に直接働きかけます。だからリラックスした状態へ導きます。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "hard",
+      "expect": { "judgment": "要修正" },
+      "why": "届出のない食品のLP本文で、成分の薬理から製品の効能へ接続している（rule 639）。成分の薬理はLP本文から外し、届出表示の範囲で書かれた別記事へ分離する必要がある。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-supp-008",
+      "text": "個人の感想です。私はこれを飲んで3か月で体重が12kg落ちました。※効果には個人差があります。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "hard",
+      "expect": { "judgment": "修正必須" },
+      "why": "体験談による効能の暗示。打消し表示（「個人の感想」「個人差」）は免罪符にならない。薬機法66条は暗示も対象。",
+      "note": "打消し表示があると軽く見る誤りをしないかを測る。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-supp-009",
+      "text": "毎日の健康習慣に。栄養バランスの取れた食事とあわせてお召し上がりください。1日1粒が目安です。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし" },
+      "why": "効能効果を一切標榜していない摂取方法の説明。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-supp-010",
+      "text": "SNSでも大人気！愛用者の口コミが多数寄せられています。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "hard",
+      "expect": { "judgment": "要修正", "must_match": [604] },
+      "why": "依頼・提供に基づく投稿を自然発生の人気であるかのように見せる演出はステマ規制（景表法5条3号）の対象（高光製薬 措置命令 2026-06-29）。ただし本当に自然発生なら適法なので、事実関係の確認を促す指摘になるのが正しい。",
+      "note": "604 の真陽性を維持するケース。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "E-cosme-011",
+      "text": "塗るだけでシミが消える。シワも完全になくなります。",
+      "industry": "E", "sub": "cosme", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "化粧品の効能56項目の範囲外。「消える」「完全になくなる」は医薬品的効能かつ保証表現。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-cosme-012",
+      "text": "メラニンの生成を抑え、日やけによるシミ・そばかすを防ぎます。（医薬部外品）",
+      "industry": "E", "sub": "quasi", "media": "lp",
+      "difficulty": "hard",
+      "expect": { "judgment": "問題なし" },
+      "why": "医薬部外品の承認された効能の範囲内の定型表現。これを黒と判定するなら誤検知。",
+      "note": "白側の代表ケース。「シミ」「美白」の2文字照合で誤爆しないかを見る。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-cosme-013",
+      "text": "乾燥による小じわを目立たなくします。※効能評価試験済み",
+      "industry": "E", "sub": "cosme", "media": "lp",
+      "difficulty": "hard",
+      "expect": { "judgment": "問題なし" },
+      "why": "化粧品の効能範囲内かつ、効能評価試験済みの表示要件を満たす定型表現。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-cosme-014",
+      "text": "医師も認めた最高峰のエイジングケア。日本一の実力です。",
+      "industry": "E", "sub": "cosme", "media": "banner",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "医師の推薦（適正広告基準で禁止）と最大級表現の併用。景表法5条1号の優良誤認も。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-cosme-015",
+      "text": "無添加処方で赤ちゃんにも安心・安全。副作用は一切ありません。",
+      "industry": "E", "sub": "cosme", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "安全性の保証。「一切ありません」は根拠のない断定。「無添加」も何を無添加とするかの明示が要る。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "E-cosme-016",
+      "text": "癌の予防に効果があります。",
+      "industry": "E", "sub": "cosme", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須", "must_not_match": [517] },
+      "known_defect": "517（シワ）が「予防」の2文字だけで一致する既知の欠陥。未修正なので、この期待値は現時点では落ちるのが正しい。直したら known_defect を消す。",
+      "why": "化粧品で疾病の予防を標榜。薬機法68条。",
+      "note": "2026-08-07 の実測では、シワのルール517が「予防」の2文字だけで一致していた。誤検知の測定点。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "A-hosp-017",
+      "text": "当院の内視鏡検査は100%安全で、絶対に痛みはありません。",
+      "industry": "A", "sub": "hospital", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "医療広告ガイドラインが禁止する保証・絶対的安全性の表示。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "A-biyou-018",
+      "text": "施術前後の写真です。1回の施術でこれだけ変わりました。",
+      "industry": "A", "sub": "biyou", "media": "hp",
+      "difficulty": "hard",
+      "expect": { "judgment": "要修正" },
+      "why": "術前術後写真は、通常必要とされる治療内容・費用・主なリスク副作用の付記があれば限定解除で掲載可。付記が無いため要修正。全面禁止ではない点が難所。",
+      "note": "「ビフォーアフター＝即NG」と短絡しないかを測る。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "A-biyou-019",
+      "text": "患者様の声：先生のおかげで人生が変わりました。本当に感謝しています。",
+      "industry": "A", "sub": "biyou", "media": "review",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "医療広告ガイドラインは治療等の内容・効果に関する体験談を明確に禁止（限定解除の対象外）。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "A-hosp-020",
+      "text": "内科・消化器内科。診療時間は平日9時から18時、土曜は12時まで。日曜祝日休診。予約はお電話で承ります。",
+      "industry": "A", "sub": "hospital", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし" },
+      "why": "広告可能事項の範囲内の事実記載のみ。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "A2-pharm-021",
+      "text": "処方箋なしOK。オンラインで医療用医薬品をお届けします。",
+      "industry": "A2", "sub": "pharmacy", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須", "must_match": [637] },
+      "why": "処方箋医薬品を処方箋なしで供給できる旨の訴求。薬機法49条1項違反行為の誘引（大阪市 2026-07-21 業務停止19日）。",
+      "note": "v17 で追加した 637 の真陽性ケース。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "A2-pharm-022",
+      "text": "かかりつけ薬剤師がお薬の重複や飲み合わせを確認します。お薬手帳をお持ちください。",
+      "industry": "A2", "sub": "pharmacy", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし" },
+      "why": "薬局の業務内容の事実記載。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "B-judo-023",
+      "text": "当院の整体で椎間板ヘルニアが根本改善します。手術は不要です。",
+      "industry": "B", "sub": "judo", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "柔道整復師の施術対象は外傷性の骨折・脱臼・打撲・捻挫に限られる。疾病名を挙げた治癒の標榜は柔整法の広告制限違反。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "B-ahaki-024",
+      "text": "鍼灸で自律神経を整え、うつ症状が改善します。",
+      "industry": "B", "sub": "ahaki", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "あはき法の広告制限。疾病名と治療効果の標榜。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "B-judo-025",
+      "text": "柔道整復師による施術。捻挫・打撲・挫傷に健康保険が使える場合があります。詳しくはご相談ください。",
+      "industry": "B", "sub": "judo", "media": "hp",
+      "difficulty": "hard",
+      "expect": { "judgment": "問題なし" },
+      "why": "あはき柔整の広告可能事項の範囲内。「使える場合があります」と断定を避けている。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "C-seitai-026",
+      "text": "整体の施術のご依頼はこちらから。お気軽にお問い合わせください。",
+      "industry": "C", "sub": "seitai", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし", "must_not_match": [604] },
+      "why": "問い合わせ導線の事務的な文言。法令上の問題は無い。",
+      "note": "2026-08-07 に「依頼」の2文字でステマ規制604が発火していた。回帰ケース。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "C-seitai-027",
+      "text": "骨盤の歪みを整えて自律神経失調症を治します。医学的に証明された技術です。",
+      "industry": "C", "sub": "seitai", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "民間資格の整体で疾病の治療を標榜。医業類似行為の限界を超える。「医学的に証明」も根拠を要する。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "C-relax-028",
+      "text": "60分のもみほぐしで、日々のお疲れをリフレッシュ。リラクゼーションサロンです。",
+      "industry": "C", "sub": "relax", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし" },
+      "why": "リラクゼーション目的の記載にとどまり、治療効果を標榜していない。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "D-esthe-029",
+      "text": "医療機器で脂肪を破壊し、確実に痩せます。1回で−10cm。",
+      "industry": "D", "sub": "datsumo", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "エステでの医療機器使用の示唆（医師法・薬機法）と、痩身効果の断定・数値保証。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "D-esthe-030",
+      "text": "認証を受けた家庭用電位治療器です。糖尿病が治る、高血圧が下がると体験会でご説明しています。",
+      "industry": "D", "sub": "esthe", "media": "print",
+      "difficulty": "hard",
+      "expect": { "judgment": "修正必須", "must_match": [638] },
+      "why": "認証された効能効果の範囲を超える疾病の治癒標榜。体験会・実演の口頭説明も広告に該当する（薬機法66条1項・72条の5第1項）。",
+      "note": "v17 で追加した 638 の真陽性ケース。「口頭も広告」を理解しているかを見る。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "D-esthe-031",
+      "text": "フェイシャルエステ60分。肌の乾燥が気になる方におすすめのコースです。",
+      "industry": "D", "sub": "esthe", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし" },
+      "why": "役務の内容説明にとどまる。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "F-agency-032",
+      "text": "モニター様に商品を無償提供し投稿していただきました。その投稿を弊社ECサイトへ掲載しています。",
+      "industry": "F", "sub": "agency", "media": "sns",
+      "difficulty": "hard",
+      "expect": { "judgment": "要修正" },
+      "why": "インフルエンサー・モニター投稿の二次利用。転載した時点で広告主の表示となりPR表示が必須（高光製薬 措置命令 2026-06-29、ロート製薬 措置命令 2025-03-25）。無償提供の事実を書いているだけでは関与開示として不十分。",
+      "note": "「PR表記があるか」ではなく「転載先に関与開示があるか」を見られるかが難所。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "F-affili-033",
+      "text": "原稿のご依頼・ご相談はメールにて受け付けています。実績はポートフォリオをご覧ください。",
+      "industry": "F", "sub": "agency", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし", "must_not_match": [604] },
+      "why": "制作会社の受注案内。広告表現ではない。",
+      "note": "「依頼」誤検知の回帰ケース（業種F版）。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "F-affili-034",
+      "text": "【PR】このサプリを3か月飲んだら本当に痩せました。編集部が実際に試した正直レビューです。",
+      "industry": "F", "sub": "affili", "media": "article",
+      "difficulty": "hard",
+      "expect": { "judgment": "修正必須" },
+      "why": "PR表記があってもステマ規制はクリアするだけで、薬機法66条の誇大広告・体験談による効能の暗示は別途成立する。アフィリエイターも「何人も」規制の対象。",
+      "note": "PR表記があれば安全と誤解しないかを測る。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "G-pet-035",
+      "text": "愛犬の関節炎が治るサプリメントです。獣医師も推奨。",
+      "industry": "G", "sub": null, "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "修正必須" },
+      "why": "ペットフード・動物用サプリで疾病の治療を標榜すると動物用医薬品に該当し得る。獣医師の推薦も適正広告基準上の問題。",
+      "label_status": "proposed"
+    },
+
+    {
+      "id": "NEUTRAL-036",
+      "text": "送料無料でお届けします。お支払いはクレジットカードまたは代金引換をご利用ください。返品は到着後8日以内にご連絡ください。",
+      "industry": "E", "sub": "supp", "media": "lp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし" },
+      "why": "取引条件の記載のみ。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "NEUTRAL-037",
+      "text": "本日は晴天なり。営業時間は9時から18時です。スタッフ募集中です。",
+      "industry": "E", "sub": "supp", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし" },
+      "why": "広告表現を含まない。ここで指摘が出るなら明確な誤検知。",
+      "label_status": "proposed"
+    },
+    {
+      "id": "NEUTRAL-038",
+      "text": "当社は個人情報の取扱いに関する方針を定め、適切に管理しています。お問い合わせいただきありがとうございます。",
+      "industry": "A", "sub": "hospital", "media": "hp",
+      "difficulty": "easy",
+      "expect": { "judgment": "問題なし" },
+      "why": "同上。医療機関でも問題にならない事務的文言。",
+      "label_status": "proposed"
+    }
+  ]
+}
