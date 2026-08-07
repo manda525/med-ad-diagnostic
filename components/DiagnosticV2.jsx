@@ -223,6 +223,33 @@ export default function DiagnosticV2() {
   const jStyle = a ? (JUDGMENT_STYLE[a.final_judgment] || JUDGMENT_STYLE["要修正"]) : null;
   const highlighted = useMemo(() => (a ? highlightText(text, a.risk_items) : null), [a, text]);
 
+  // 有料監修の確定料金（既存の料金体系＝3円/字・最低受託1万円・税別）と、
+  // 構造化した申込メール。mailto はクライアントによりURL長制限があるため、
+  // 原稿は冒頭1,000字まで本文に載せ、全文は返信メールでの添付を依頼する。
+  const superviseFee = Math.max(10000, Math.ceil(text.length * 3));
+  const superviseMailto = useMemo(() => {
+    if (!a) return "";
+    const ind = INDUSTRIES.find((i) => i.id === industry);
+    const subLabel = ind?.subs?.find((s) => s.id === sub)?.label || "";
+    const med = MEDIA.find((m) => m.id === media);
+    const excerpt = text.length > 1000 ? text.slice(0, 1000) + "\n…（以下略。原稿全文はこのメールにご貼付ください）" : text;
+    const body = [
+      "※このメールは薬機レーダーの診断結果から自動作成されています。このまま送信いただけます。",
+      "",
+      `【業種】${ind?.label || industry}${subLabel ? `（${subLabel}）` : ""}`,
+      `【媒体】${med?.label || media || "未指定"}`,
+      `【AI一次判定】${a.final_judgment}（リスクスコア ${a.risk_score}）`,
+      `【原稿の分量】${text.length.toLocaleString()}文字`,
+      `【監修料金】¥${superviseFee.toLocaleString()}（税別・3円/文字・最低受託¥10,000）`,
+      "【希望納期】（ご記入ください）",
+      "【補足・ご要望】（任意）",
+      "",
+      "----- 診断した原稿 -----",
+      excerpt,
+    ].join("\n");
+    return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`【監修申込】${ind?.label || ""} / ${text.length}文字 / ¥${superviseFee.toLocaleString()}`)}&body=${encodeURIComponent(body)}`;
+  }, [a, industry, sub, media, text, superviseFee]);
+
   return (
     <div className="v2">
       <style>{`
@@ -652,13 +679,39 @@ export default function DiagnosticV2() {
               本ツールはAIによる一次診断です。最終的な適否判断は薬剤師×医療広告コンサルタントによる監修、または弁護士にご相談ください。
             </p>
           </div>
-          <div className="card" style={{ textAlign: "center" }}>
-            <p className="serif" style={{ fontSize: 16, fontWeight: 600, margin: "0 0 4px" }}>人による監修で仕上げる</p>
-            <p style={{ fontSize: 12.5, color: "var(--ink3)", margin: "0 0 12px" }}>LP全文レビュー・継続監修・法規対応の設計まで対応します</p>
-            <a href={`mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`}
-              style={{ display: "inline-block", fontSize: 14, padding: "11px 30px", borderRadius: 8, background: "var(--ink)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-              無料で相談する
-            </a>
+          {/* 有料監修の申込（診断内容から見積を確定して構造化して送る） */}
+          <div className="card" style={{ border: "2px solid var(--ink)" }}>
+            <p className="serif" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 4px" }}>この診断を、薬剤師の監修で確定させる</p>
+            <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 12px", lineHeight: 1.7 }}>
+              AIの一次診断は参考情報です。掲載可否の確定と修正文の納品は、薬剤師・薬機法管理者による監修で行います。
+            </p>
+            <div style={{ display: "flex", gap: 18, flexWrap: "wrap", background: "var(--bg2, #F8F8F6)", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
+              <div>
+                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>原稿の分量</p>
+                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{text.length.toLocaleString()}文字</p>
+              </div>
+              <div>
+                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>監修料金（3円/文字・税別）</p>
+                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>¥{superviseFee.toLocaleString()}{superviseFee === 10000 && text.length * 3 < 10000 ? "（最低受託料金）" : ""}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>ご返信</p>
+                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>1営業日以内</p>
+              </div>
+            </div>
+            <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "0 0 12px", lineHeight: 1.6 }}>
+              上記が確定料金です（原稿の追加・リライト込みをご希望の場合は別途お見積り）。納品日はご返信時に確定します。
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <a href={superviseMailto}
+                style={{ display: "inline-block", fontSize: 14, padding: "11px 26px", borderRadius: 8, background: "var(--ink)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
+                この内容で監修を申し込む
+              </a>
+              <a href={`mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`}
+                className="btn-ghost" style={{ display: "inline-block", fontSize: 13, padding: "11px 20px", textDecoration: "none" }}>
+                まずは無料で相談する
+              </a>
+            </div>
           </div>
         </div>
       )}
