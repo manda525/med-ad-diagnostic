@@ -10,7 +10,8 @@
     "test:security": "node tests/usage.test.mjs",
     "test:matcher": "node tests/matcher.test.mjs",
     "test": "npm run test:security && npm run test:matcher",
-    "eval": "node scripts/eval.mjs"
+    "eval": "node scripts/eval.mjs",
+    "eval:ai": "node scripts/eval-ai.mjs"
   },
   "dependencies": {
     "next": "^14.2.5",
