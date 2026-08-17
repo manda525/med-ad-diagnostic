@@ -131,17 +131,41 @@ function dedupe(rules) {
   return { kept, dropped };
 }
 
+// ---- 条件付きプロファイル（既定 OFF） ----
+// 正本の「百貨店_店頭厳しめ」（rule_id 688-793）は三越伊勢丹グループの店頭基準
+// 由来で、法令ではなく取引先の私的基準。百貨店の店頭に卸す案件だけが従う。
+// これを既定の診断に混ぜると、通常の広告表現がほぼ全部ひっかかって使い物に
+// ならない（まさの指示：「百貨店基準は常にONはダメ」）。
+//
+// フラグで切り替える設計にすると、既定値の取り違え一発で全案件に降ってくる。
+// そうならないよう出力ファイルごと分ける。rulebook_v2.json（＝engine.js が
+// 読む唯一のルールセット）には決して入らない。使うときは呼ぶ側が明示的に
+// rulebook_profile_depstore.json を読む。既定 OFF が設定でなく構造で決まる。
+const PROFILE_GENRE = /^百貨店/;
+
 const excluded = [];
-const converted = [
+const all = [
   ...src.RB.map((r) => convert(r, "RB")),
+  ...(src.DEP || []).map((r) => convert(r, "DEP")),
   ...src.EX.map((r) => convert(r, "EX")),
   ...src.CS.map((r) => convert(r, "CS")),
-].filter((r) => {
+];
+
+const profileRules = all.filter((r) => PROFILE_GENRE.test(String(r.genre || "")));
+const converted = all.filter((r) => {
+  if (PROFILE_GENRE.test(String(r.genre || ""))) return false;
   if (EXCLUDED_GENRE.test(String(r.genre || ""))) { excluded.push(String(r.id)); return false; }
   return true;
 });
 
 const { kept, dropped: dupIds } = dedupe(converted);
+
+// 既定セットへの混入を機械で止める。ここが落ちたらビルドを失敗させる。
+const leaked = kept.filter((r) => PROFILE_GENRE.test(String(r.genre || "")));
+if (leaked.length) {
+  console.error(`百貨店プロファイルが既定セットへ混入: ${leaked.map((r) => r.id).join(", ")}`);
+  process.exit(1);
+}
 
 const out = {
   meta: {
@@ -151,6 +175,7 @@ const out = {
     source: "rulebook.json " + (src.meta?.version || ""),
     excluded_genre: excluded.length,
     deduped: dupIds.length,
+    profile_depstore: profileRules.length, // 別ファイル。既定では適用しない
   },
   rules: kept,
 };
@@ -162,6 +187,24 @@ for (const r of out.rules) for (const l of r.law_ids) byLaw[l] = (byLaw[l] || 0)
 
 fs.mkdirSync(path.join(root, "data"), { recursive: true });
 fs.writeFileSync(path.join(root, "data", "rulebook_v2.json"), JSON.stringify(out));
+
+// 条件付きプロファイルは別ファイル。engine.js は読まない。
+fs.writeFileSync(
+  path.join(root, "data", "rulebook_profile_depstore.json"),
+  JSON.stringify({
+    meta: {
+      profile: "depstore",
+      label: "百貨店_店頭厳しめ",
+      default_enabled: false,
+      applies_when: "百貨店の店頭に卸す案件で、取引先が店頭基準の遵守を求める場合のみ",
+      caution: "法令ではなく取引先の私的基準。常時適用すると通常の広告表現がほぼ全て該当する",
+      source: "rulebook.json " + (src.meta?.version || ""),
+      built_at: new Date().toISOString().slice(0, 10),
+      rule_count: profileRules.length,
+    },
+    rules: profileRules,
+  })
+);
 
 // クライアント表示用の軽量スタッツ（バンドルにルール全体を載せないため）
 const law = JSON.parse(fs.readFileSync(path.join(root, "data", "law_master.json"), "utf8"));
@@ -181,5 +224,6 @@ if (dupIds.length) {
   console.log(`deduped: ${dupIds.length}  ${dupIds.slice(0, 3).join(", ")}${dupIds.length > 3 ? " …" : ""}`);
 }
 console.log(`rules: ${out.rules.length}`);
+console.log(`profile depstore (既定OFF・別ファイル): ${profileRules.length}`);
 console.log(`law_id coverage:`, byLaw);
 console.log(`no law_id: ${noLaw.length}`, noLaw.slice(0, 10).map((r) => `${r.id}:${r.genre}:${r.law}`));

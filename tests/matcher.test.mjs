@@ -248,6 +248,27 @@ check(
   typeof rulebook.meta?.deduped === "number"
 );
 
+// 百貨店_店頭厳しめ（正本 rule_id 688-793）は三越伊勢丹グループの店頭基準由来で、
+// 法令ではなく取引先の私的基準。百貨店に卸す案件だけが従う条件付きプロファイルで、
+// 常時適用すると通常の広告表現がほぼ全部ひっかかって診断が使い物にならなくなる。
+// ビルドで別ファイルへ分けているが、分離が壊れたことに本番で気づくのは最悪なので
+// ここで固定する。genre の接頭辞と、実際に赤が出る語の両方から見る。
+const DEP = rulebook.rules.filter((r) => /^百貨店/.test(String(r.genre || "")));
+check("百貨店プロファイルが既定のルールセットに入っていない", DEP.length === 0,
+  DEP.length ? `混入 ${DEP.length}件: ${JSON.stringify(DEP.map((r) => r.id).slice(0, 8))}` : "");
+
+check(
+  `百貨店の件数を meta に記録している（別ファイルへ ${rulebook.meta?.profile_depstore ?? "?"}件）`,
+  typeof rulebook.meta?.profile_depstore === "number"
+);
+
+// 688「赤ちゃんにも安心」は百貨店基準でのみNG。一般の化粧品広告では
+// 「安心」系の既存ルールに留まるべきで、688 が直接一致してはいけない。
+check(
+  "百貨店限定の表現（赤ちゃんにも安心）で 688 が発火しない",
+  !ids("赤ちゃんにも安心してお使いいただけます。", "E", "cosme").includes(688)
+);
+
 console.log(`\n  参考：横断ルール（全業種適用）は ${CROSS.length} 件`);
 
 // ---------------------------------------------------------------
