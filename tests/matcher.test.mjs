@@ -251,6 +251,98 @@ check(
 console.log(`\n  参考：横断ルール（全業種適用）は ${CROSS.length} 件`);
 
 // ---------------------------------------------------------------
+console.log("\n[Group D2] 否定文脈の信頼度ダウン（2026-08-16 追加）");
+// ---------------------------------------------------------------
+//
+// 規制を「説明している」文と違反文は substring 照合では区別できない。
+// コンプライアンスページ・教育記事・社内向け解説を貼った利用者に
+// 片っ端から赤が出るという、いちばん心証の悪い外し方をしていた。
+// 一致語の直後30字に否定・禁止の語があれば negated を立てて後ろへ回す。
+//
+// 除外ではなく降格なので、negated が立っても matched には残る。
+// ここで見るのは「フラグが正しく立つか」と「立ててはいけない場面で立たないか」。
+
+const negatedOf = (text, ind, sub) =>
+  matchRules(text, ind, sub).filter((r) => r.negated).map((r) => r.id);
+const cleanOf = (text, ind, sub) =>
+  matchRules(text, ind, sub).filter((r) => !r.negated).map((r) => r.id);
+
+// (1) 解説文では negated が立つ
+const D2_NEG = [
+  ["医療広告では、限定解除の要件を満たしても患者の体験談は掲載できません。", "A", "clinic"],
+  ["当サイトでは、使用前後の写真は載せていません。", "D", "esthe"],
+  ["「シミが消える」という表現は薬機法違反です。", "E", "cosme"],
+];
+for (const [text, ind, sub] of D2_NEG) {
+  const all = ids(text, ind, sub);
+  const neg = negatedOf(text, ind, sub);
+  check(
+    `解説文で negated が立つ：「${text.slice(0, 22)}…」`,
+    all.length === 0 || neg.length > 0,
+    `一致 ${JSON.stringify(all)} / うち negated ${JSON.stringify(neg)}`
+  );
+  check(
+    `解説文の一致は除外でなく降格（matched に残る）：「${text.slice(0, 14)}…」`,
+    neg.every((id) => all.includes(id))
+  );
+}
+
+// (2) 本物の違反では negated を立てない（＝握り潰さない）
+//     ここが壊れると誤検知は減るが見逃しが増える。誤検知より重い。
+const D2_POS = [
+  ["このクリームを塗ればシミが消える。", "E", "cosme"],
+  ["飲むだけで痩せる。運動は必要ありません。", "D", "esthe"],
+];
+for (const [text, ind, sub] of D2_POS) {
+  const all = ids(text, ind, sub);
+  const clean = cleanOf(text, ind, sub);
+  check(
+    `違反文で negated を立てない：「${text.slice(0, 22)}…」`,
+    all.length === 0 || clean.length > 0,
+    `一致 ${JSON.stringify(all)} / negated でないもの ${JSON.stringify(clean)}`
+  );
+}
+
+// (3) 免責文（「〜ものではありません」）を否定と読み違えない
+//     「シミが消える ※効果を保証するものではありません」は
+//     定型の免責であって主張の打ち消しではない。ここを否定にすると
+//     免責文を添えるだけで全部素通りする穴になる。
+{
+  const t = "このクリームでシミが消える効果を保証するものではありません";
+  const clean = cleanOf(t, "E", "cosme");
+  const all = ids(t, "E", "cosme");
+  check(
+    "免責文を否定文脈として扱わない",
+    all.length === 0 || clean.length > 0,
+    `一致 ${JSON.stringify(all)} / negated でないもの ${JSON.stringify(clean)}`
+  );
+}
+
+// (4) 文末記号で窓を切る（別の文の免責を直前の主張に結びつけない）
+{
+  const t = "このクリームでシミが消える。※効果には個人差があり保証はできません";
+  const clean = cleanOf(t, "E", "cosme");
+  const all = ids(t, "E", "cosme");
+  check(
+    "句点や※の先にある否定語を拾わない",
+    all.length === 0 || clean.length > 0,
+    `一致 ${JSON.stringify(all)} / negated でないもの ${JSON.stringify(clean)}`
+  );
+}
+
+// (5) 同じ語が否定と主張の両方で出たら、主張を優先する
+{
+  const t = "患者の体験談は掲載できません。とはいえ当院の患者の体験談をご紹介します。";
+  const clean = cleanOf(t, "A", "clinic");
+  const all = ids(t, "A", "clinic");
+  check(
+    "否定と主張が混在したら主張を優先する",
+    all.length === 0 || clean.length > 0,
+    `一致 ${JSON.stringify(all)} / negated でないもの ${JSON.stringify(clean)}`
+  );
+}
+
+// ---------------------------------------------------------------
 console.log("\n[Group E] 既知の欠陥（非ブロッキング・PR2で対処）");
 // ---------------------------------------------------------------
 //
