@@ -137,12 +137,55 @@ check(
   !ids("癌について解説します", "C", "seitai").includes(908),
   `一致: ${JSON.stringify(ids("癌について解説します", "C", "seitai"))}`
 );
+// 件数をハードコードすると overrides を1件足すたびに落ちる（2026-08-08 に実際に落ちた）。
+// 検証したいのは「意図せず増減していないこと」なので、data/match_overrides.json を
+// 真実の源にして、ビルド後の rulebook_v2 と集合が一致するかを見る。D-007（数字を手で書かない）。
+const overrideIds = Object.keys(
+  JSON.parse(fs.readFileSync(path.join(root, "data/match_overrides.json"), "utf8"))
+)
+  .filter((k) => !k.startsWith("_"))
+  .sort();
+const builtMatchIds = rulebook.rules
+  .filter((r) => Array.isArray(r.match) && r.match.length)
+  .map((r) => String(r.id))
+  .sort();
 check(
-  "明示照合語を持つルールが意図した数だけ存在する（908・909）",
-  rulebook.rules.filter((r) => Array.isArray(r.match) && r.match.length).length === 2,
-  `match を持つrule_id: ${JSON.stringify(
-    rulebook.rules.filter((r) => Array.isArray(r.match) && r.match.length).map((r) => r.id)
-  )}`
+  "明示照合語が match_overrides.json と過不足なく一致する",
+  JSON.stringify(overrideIds) === JSON.stringify(builtMatchIds),
+  `overrides: ${JSON.stringify(overrideIds)} / built: ${JSON.stringify(builtMatchIds)}`
+);
+
+// --- 2026-08-08 追加した overrides の真陽性・偽陽性（289/503/509/C2-15）---
+// CBD OEM 18社の横断スキャンで、この4ルールが営業リストを壊していた実測に基づく。
+check(
+  "289：OEMの業務説明『処方設計』で発火しない",
+  !ids("企画から処方設計まで一貫したOEM開発を行っています。", "E", "supp").includes(289),
+  `一致: ${JSON.stringify(ids("企画から処方設計まで一貫したOEM開発を行っています。", "E", "supp"))}`
+);
+check(
+  "289：医薬品性を暗示する『処方薬と同等』では発火する",
+  ids("処方薬と同等の効果が期待できます。", "E", "cosme").includes(289),
+  `一致: ${JSON.stringify(ids("処方薬と同等の効果が期待できます。", "E", "cosme"))}`
+);
+check(
+  "503/C2-15：『安全性試験』で発火しない（『安全』2文字の誤爆）",
+  !ids("全ロットで安全性試験を実施しています。", "E", "supp").some((i) => ["503", "C2-15", 503].includes(i)),
+  `一致: ${JSON.stringify(ids("全ロットで安全性試験を実施しています。", "E", "supp"))}`
+);
+check(
+  "503：連結表現『安心・安全』では発火する",
+  ids("安心・安全な製品をお届けします。", "E", "cosme").some((i) => ["503", 503].includes(i)),
+  `一致: ${JSON.stringify(ids("安心・安全な製品をお届けします。", "E", "cosme"))}`
+);
+check(
+  "509：『最高峰リーグ』で発火しない（第三者の一般的形容）",
+  !ids("フランス最高峰リーグの選手とスポンサー契約を締結しました。", "E", "supp").some((i) => ["509", 509].includes(i)),
+  `一致: ${JSON.stringify(ids("フランス最高峰リーグの選手とスポンサー契約を締結しました。", "E", "supp"))}`
+);
+check(
+  "509：自社訴求の『最高品質』では発火する",
+  ids("最高品質のCBDをお届けします。", "E", "cosme").some((i) => ["509", 509].includes(i)),
+  `一致: ${JSON.stringify(ids("最高品質のCBDをお届けします。", "E", "cosme"))}`
 );
 
 check(

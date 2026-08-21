@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { INDUSTRIES, MEDIA } from "../lib/taxonomy";
 import stats from "../data/stats.json";
+import { superviseFeeFor, buildSubject, buildMetaLines, buildApplyText, buildMailto } from "../lib/supervise";
 
 // ===== 定数 =====
 const FREE_LIMIT = 3;
@@ -80,6 +81,8 @@ export default function DiagnosticV2() {
   const [err, setErr] = useState("");
   const [showContact, setShowContact] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [copyState, setCopyState] = useState(null); // null | "ok" | "fail"
+  const [showApplyText, setShowApplyText] = useState(false);
   const resultRef = useRef(null);
 
   // 課金・利用回数
@@ -223,32 +226,78 @@ export default function DiagnosticV2() {
   const jStyle = a ? (JUDGMENT_STYLE[a.final_judgment] || JUDGMENT_STYLE["要修正"]) : null;
   const highlighted = useMemo(() => (a ? highlightText(text, a.risk_items) : null), [a, text]);
 
-  // 有料監修の確定料金（既存の料金体系＝3円/字・最低受託1万円・税別）と、
-  // 構造化した申込メール。mailto はクライアントによりURL長制限があるため、
-  // 原稿は冒頭1,000字まで本文に載せ、全文は返信メールでの添付を依頼する。
-  const superviseFee = Math.max(10000, Math.ceil(text.length * 3));
-  const superviseMailto = useMemo(() => {
-    if (!a) return "";
+  // 有料監修の確定料金と申込内容。組み立ては lib/supervise.js に集約している。
+  // 申込は「クリップボードにコピー → メーラーで貼り付け」の2段構え。原稿を mailto の
+  // URL に載せると、日本語のエンコードで長さが原稿量に比例して伸び、Windows/Outlook の
+  // 上限（約2,000字）を超えてメーラーが起動しなくなるため（tests/supervise.test.mjs）。
+  const superviseFee = superviseFeeFor(text.length);
+
+  const superviseMeta = useMemo(() => {
+    if (!a) return null;
     const ind = INDUSTRIES.find((i) => i.id === industry);
-    const subLabel = ind?.subs?.find((s) => s.id === sub)?.label || "";
-    const med = MEDIA.find((m) => m.id === media);
-    const excerpt = text.length > 1000 ? text.slice(0, 1000) + "\n…（以下略。原稿全文はこのメールにご貼付ください）" : text;
-    const body = [
-      "※このメールは薬機レーダーの診断結果から自動作成されています。このまま送信いただけます。",
-      "",
-      `【業種】${ind?.label || industry}${subLabel ? `（${subLabel}）` : ""}`,
-      `【媒体】${med?.label || media || "未指定"}`,
-      `【AI一次判定】${a.final_judgment}（リスクスコア ${a.risk_score}）`,
-      `【原稿の分量】${text.length.toLocaleString()}文字`,
-      `【監修料金】¥${superviseFee.toLocaleString()}（税別・3円/文字・最低受託¥10,000）`,
-      "【希望納期】（ご記入ください）",
-      "【補足・ご要望】（任意）",
-      "",
-      "----- 診断した原稿 -----",
-      excerpt,
-    ].join("\n");
-    return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`【監修申込】${ind?.label || ""} / ${text.length}文字 / ¥${superviseFee.toLocaleString()}`)}&body=${encodeURIComponent(body)}`;
-  }, [a, industry, sub, media, text, superviseFee]);
+    const common = {
+      industryLabel: ind?.label || industry,
+      subLabel: ind?.subs?.find((x) => x.id === sub)?.label || "",
+      mediaLabel: MEDIA.find((m) => m.id === media)?.label || media || "",
+      judgment: a.final_judgment,
+      riskScore: a.risk_score,
+      length: text.length,
+      fee: superviseFee,
+    };
+    return { subject: buildSubject(common), lines: buildMetaLines(common) };
+  }, [a, industry, sub, media, text.length, superviseFee]);
+
+  const superviseApplyText = useMemo(
+    () => (superviseMeta ? buildApplyText({ metaLines: superviseMeta.lines, text }) : ""),
+    [superviseMeta, text]
+  );
+
+  const superviseMailto = useMemo(
+    () => (superviseMeta ? buildMailto({ email: CONTACT_EMAIL, subject: superviseMeta.subject }) : ""),
+    [superviseMeta]
+  );
+
+  // クリップボードAPIが使えない環境（http・古いSafari・権限拒否）向けの退避。
+  const legacyCopy = useCallback((value) => {
+    try {
+      const el = document.createElement("textarea");
+      el.value = value;
+      el.setAttribute("readonly", "");
+      el.style.position = "fixed";
+      el.style.opacity = "0";
+      document.body.appendChild(el);
+      el.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(el);
+      return ok;
+    } catch (_) {
+      return false;
+    }
+  }, []);
+
+  // コピーに成功したときだけメーラーを開く。失敗したら開かずに本文を画面に出す。
+  const handleSuperviseApply = useCallback(
+    async (e) => {
+      e.preventDefault();
+      let ok = false;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(superviseApplyText);
+          ok = true;
+        }
+      } catch (_) {
+        ok = false;
+      }
+      if (!ok) ok = legacyCopy(superviseApplyText);
+      setCopyState(ok ? "ok" : "fail");
+      if (ok) {
+        window.location.href = superviseMailto;
+      } else {
+        setShowApplyText(true);
+      }
+    },
+    [superviseApplyText, superviseMailto, legacyCopy]
+  );
 
   return (
     <div className="v2">
@@ -702,16 +751,40 @@ export default function DiagnosticV2() {
             <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "0 0 12px", lineHeight: 1.6 }}>
               上記が確定料金です（原稿の追加・リライト込みをご希望の場合は別途お見積り）。納品日はご返信時に確定します。
             </p>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <a href={superviseMailto}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <a href={superviseMailto} onClick={handleSuperviseApply}
                 style={{ display: "inline-block", fontSize: 14, padding: "11px 26px", borderRadius: 8, background: "var(--ink)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-                この内容で監修を申し込む
+                申込内容をコピーしてメールを開く
               </a>
               <a href={`mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`}
                 className="btn-ghost" style={{ display: "inline-block", fontSize: 13, padding: "11px 20px", textDecoration: "none" }}>
                 まずは無料で相談する
               </a>
             </div>
+
+            {copyState === "ok" && (
+              <p style={{ fontSize: 12.5, color: "var(--acc)", margin: "10px 0 0", lineHeight: 1.7 }}>
+                ✓ 申込内容（原稿の全文つき）をコピーしました。開いたメールの本文に貼り付けて送信してください。
+              </p>
+            )}
+            {copyState === "fail" && (
+              <p style={{ fontSize: 12.5, color: "#7A2E0E", margin: "10px 0 0", lineHeight: 1.7 }}>
+                自動コピーができませんでした。下の内容を選択してコピーし、{CONTACT_EMAIL} 宛にお送りください。
+              </p>
+            )}
+
+            <p style={{ margin: "10px 0 0" }}>
+              <button type="button" onClick={() => setShowApplyText((v) => !v)}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, color: "var(--ink3)", textDecoration: "underline" }}>
+                {showApplyText ? "申込内容を隠す" : "メールが開かない場合はこちら（申込内容を表示）"}
+              </button>
+            </p>
+            {showApplyText && (
+              <textarea readOnly value={superviseApplyText}
+                onFocus={(e) => e.target.select()}
+                style={{ width: "100%", minHeight: 180, marginTop: 8, fontSize: 12, lineHeight: 1.7, padding: 10,
+                         border: "1px solid var(--line2)", borderRadius: 8, background: "var(--paper2)", color: "var(--ink)" }} />
+            )}
           </div>
         </div>
       )}
