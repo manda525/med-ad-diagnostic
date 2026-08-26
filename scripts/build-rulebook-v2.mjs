@@ -67,6 +67,9 @@ function genreLawIds(genre) {
   if (g === "医療広告_処方箋医薬品") return ["L-MED-AD", "L-PHARM"];
   if (g.startsWith("医療広告")) return ["L-MED-AD"];
   if (g.startsWith("医療機器")) return ["L-MED-DEVICE"];
+  // v40 追加：医療機器該当性は業種横断（共通_）なので上の 医療機器 プレフィックスに当たらない。
+  // 法令欄から L-YAKKI-68 / L-YAKKI-66 は付くが、機器の法令ノードは genre からしか紐づかない。
+  if (g === "共通_医療機器該当性") return ["L-MED-DEVICE"];
   // v18 追加ジャンル
   if (g === "ペット_表示区分") return ["L-PF-FAIR", "L-KEIHYO-5"];
   if (g === "ペット_法定表示") return ["L-PF-SAFETY"];
