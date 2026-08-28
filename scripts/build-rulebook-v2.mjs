@@ -26,6 +26,8 @@ const LAW_PATTERNS = [
   [/ペットフード公正競争規約/, "L-PF-FAIR"],
   [/医療広告GL|医療広告ガイドライン/, "L-MED-AD"],
   [/医療法/, "L-MED-AD"],
+  // v44 追加：特定商取引法（通信販売）。既存の L-TOKUSHOHO は特定継続的役務提供（エステ）専用ノードなので別IDにする
+  [/特定商取引法|特商法/, "L-TOKUSHOHO-TSUHAN"],
 ];
 
 function toLawIds(lawStr) {
