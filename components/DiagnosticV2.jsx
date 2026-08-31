@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { INDUSTRIES, MEDIA } from "../lib/taxonomy";
 import stats from "../data/stats.json";
 import { superviseFeeFor, buildSubject, buildMetaLines, buildApplyText, buildMailto } from "../lib/supervise";
+import { inferContext } from "../lib/infer";
 
 // ===== 定数 =====
 const FREE_LIMIT = 3;
@@ -73,6 +74,10 @@ export default function DiagnosticV2() {
   const [clientSub, setClientSub] = useState(null);
   const [media, setMedia] = useState(null);
   const [text, setText] = useState("");
+  // 入口を1画面にするための状態。業種・媒体は広告文から推定し、
+  // ユーザーには「確認」だけさせる。手で触った時点で推定を止める。
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [manualPick, setManualPick] = useState(false);
 
   // 実行状態
   const [loading, setLoading] = useState(false);
@@ -180,11 +185,24 @@ export default function DiagnosticV2() {
   const needsClient = industry === "F";
   const clientIndustryObj = INDUSTRIES.find((i) => i.id === clientIndustry);
 
+  // 広告文が変わるたびに業種・媒体を推定する。手動で選んだ後は上書きしない。
+  useEffect(() => {
+    if (manualPick) return;
+    const g = inferContext(text);
+    if (!g.industry) return;
+    setIndustry(g.industry);
+    setSub(g.sub);
+    setMedia(g.media);
+    setClientIndustry(null);
+    setClientSub(null);
+  }, [text, manualPick]);
+
   const step1Done = !!industry && (!needsClient || !!clientIndustry);
   const step2Done = step1Done && !!media;
   const canRun = step2Done && text.trim().length > 0 && !loading && !isOverHardLimit;
 
   const pickSample = useCallback((s) => {
+    setManualPick(true);
     setIndustry(s.industry); setSub(s.sub); setMedia(s.media); setText(s.text);
     setClientIndustry(null); setClientSub(null);
   }, []);
@@ -301,7 +319,9 @@ export default function DiagnosticV2() {
 
   return (
     <div className="v2">
-      <style>{`
+      {/* SSRで引用符が &quot; / &#x27; にエスケープされ、クライアントと文字列が一致せず
+          ハイドレーションが失敗する（Next 14で再現）。__html で渡すとエスケープされない。 */}
+      <style dangerouslySetInnerHTML={{ __html: `
         .v2 { --ink:#182430; --ink2:#44576B; --ink3:#8296A9; --line:#E3E9EF; --line2:#CBD6E0;
               --paper:#FFFFFF; --paper2:#F6F8FA; --acc:#0E5E6F; --acc-bg:#EAF4F5; --acc-bd:#9CC5CC;
               padding: 1.25rem 0 3rem; color: var(--ink); }
@@ -341,7 +361,7 @@ export default function DiagnosticV2() {
         .v2 textarea:focus { border-color:var(--acc) !important; box-shadow:0 0 0 3px var(--acc-bg); }
         @keyframes v2spin { to { transform: rotate(360deg); } }
         @media (max-width:560px){ .v2 .card{ padding:1rem 1rem; } }
-      `}</style>
+      ` }} />
 
       {/* ===== ヘッダー ===== */}
       <div style={{ marginBottom: 20 }}>
@@ -357,8 +377,7 @@ export default function DiagnosticV2() {
               薬機法・景表法・医療広告GL　AIチェック
             </p>
             <p style={{ fontSize: 13.5, lineHeight: 1.9, color: "var(--ink2)", margin: 0, maxWidth: 620 }}>
-              業種と媒体を選んで広告文を貼るだけ。薬機法・景表法・医療広告GL・獣医療法など
-              <strong>{stats.law_count}法令の一次ソースDB</strong>と<strong>{stats.rule_count}件の現場ルール</strong>に照らし、
+              広告文を貼るだけ。薬機法・景表法・医療広告GLなどに照らして、
               条文根拠つきでリスク箇所と修正案を返します。
             </p>
           </div>
@@ -371,18 +390,6 @@ export default function DiagnosticV2() {
               監修相談
             </button>
           </div>
-        </div>
-        <div style={{ display: "flex", gap: 14, marginTop: 14, flexWrap: "wrap" }}>
-          {[
-            [`${INDUSTRIES.length}業種対応`, "医療・施術・美容・EC・ペット"],
-            [`${stats.law_count}法令DB`, "一次ソース検証済み"],
-            ["条文根拠つき", "law_idで法令に紐づく判定"],
-            [`ルールブック ${stats.rule_version}`, `${stats.rule_updated} 更新・${stats.rule_count}項目`],
-          ].map(([t, d], i) => (
-            <div key={i} style={{ fontSize: 11.5, color: "var(--ink3)" }}>
-              <span style={{ color: "var(--ink)", fontWeight: 600 }}>{t}</span>　{d}
-            </div>
-          ))}
         </div>
       </div>
 
@@ -426,85 +433,12 @@ export default function DiagnosticV2() {
         </div>
       )}
 
-      {/* ===== STEP 1 業種 ===== */}
+      {/* ===== STEP 3 入力 ===== */}
       <div className="card">
         <div className="step-head">
-          <span className={`step-num ${step1Done ? "done" : ""}`}>1</span>
-          <span className="step-title">クライアントの業種</span>
-          {step1Done && <span style={{ fontSize: 12, color: "var(--acc)", fontWeight: 600 }}>✓ {selectedIndustry?.label}{sub ? `・${selectedIndustry?.subs.find((s) => s.id === sub)?.label}` : ""}</span>}
+          <span className="step-title" style={{ fontSize: 16 }}>広告文を貼り付ける</span>
         </div>
-        <p className="step-sub">業種で適用される法令が変わります（例：整骨院は柔整法、ペットフードは景表法＋公正競争規約）</p>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(158px,1fr))" }}>
-          {INDUSTRIES.map((ind) => (
-            <button key={ind.id} type="button" className={`tile ${industry === ind.id ? "on" : ""}`}
-              onClick={() => { setIndustry(ind.id); setSub(null); if (ind.id !== "F") { setClientIndustry(null); setClientSub(null); } }}>
-              <div className="t1"><span className="ico">{ind.icon}</span>{ind.label}</div>
-              <div className="t2">{ind.desc}</div>
-            </button>
-          ))}
-        </div>
-        {selectedIndustry && (
-          <div style={{ marginTop: 12 }}>
-            <p style={{ fontSize: 12, color: "var(--ink3)", margin: "0 0 8px" }}>詳細（任意・選ぶと精度が上がります）</p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {selectedIndustry.subs.map((s) => (
-                <button key={s.id} type="button" className={`chip ${sub === s.id ? "on" : ""}`} onClick={() => setSub(sub === s.id ? null : s.id)}>
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {needsClient && (
-          <div style={{ marginTop: 14, padding: "12px 14px", background: "var(--paper2)", borderRadius: 10 }}>
-            <p style={{ fontSize: 12.5, fontWeight: 600, margin: "0 0 8px" }}>受託先（広告主）の業種 <span style={{ color: "#B42318" }}>必須</span></p>
-            <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "0 0 8px" }}>制作物は受託先業種の規制を継承します。加えてステマ規制・表示主体責任をチェックします。</p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {INDUSTRIES.filter((i) => i.id !== "F").map((i) => (
-                <button key={i.id} type="button" className={`chip ${clientIndustry === i.id ? "on" : ""}`}
-                  onClick={() => { setClientIndustry(i.id); setClientSub(null); }}>
-                  <span className="ico">{i.icon}</span>{i.label}
-                </button>
-              ))}
-            </div>
-            {clientIndustryObj && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                {clientIndustryObj.subs.map((s) => (
-                  <button key={s.id} type="button" className={`chip ${clientSub === s.id ? "on" : ""}`} onClick={() => setClientSub(clientSub === s.id ? null : s.id)}>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ===== STEP 2 媒体 ===== */}
-      <div className="card" style={{ opacity: step1Done ? 1 : 0.45, pointerEvents: step1Done ? "auto" : "none" }}>
-        <div className="step-head">
-          <span className={`step-num ${step2Done ? "done" : step1Done ? "" : "off"}`}>2</span>
-          <span className="step-title">広告を出す媒体</span>
-          {media && <span style={{ fontSize: 12, color: "var(--acc)", fontWeight: 600 }}>✓ {MEDIA.find((m) => m.id === media)?.label}</span>}
-        </div>
-        <p className="step-sub">媒体で「広告該当性」や要件が変わります（例：SNSはステマ規制、医療HPは限定解除）</p>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))" }}>
-          {MEDIA.map((m) => (
-            <button key={m.id} type="button" className={`tile ${media === m.id ? "on" : ""}`} onClick={() => setMedia(m.id)}>
-              <div className="t1"><span className="ico">{m.icon}</span>{m.label}</div>
-            </button>
-          ))}
-        </div>
-        {media && <p style={{ fontSize: 11.5, color: "var(--acc)", margin: "10px 0 0" }}>◎ {MEDIA.find((m) => m.id === media)?.note}</p>}
-      </div>
-
-      {/* ===== STEP 3 入力 ===== */}
-      <div className="card" style={{ opacity: step2Done ? 1 : 0.45, pointerEvents: step2Done ? "auto" : "none" }}>
-        <div className="step-head">
-          <span className={`step-num ${text.trim() ? "done" : step2Done ? "" : "off"}`}>3</span>
-          <span className="step-title">広告文を入力</span>
-        </div>
-        <p className="step-sub">LP文言・SNS投稿・パッケージ文言などをそのまま貼り付けてください（8,000文字まで）</p>
+        <p className="step-sub" style={{ marginLeft: 0 }}>LP文言・SNS投稿・パッケージ文言などをそのまま貼り付けてください（8,000文字まで）。業種と媒体は本文から自動で判定します。</p>
         <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
           placeholder={"例：飲むだけでみるみる痩せる！医師も推奨するサプリで、糖尿病の予防にも。"} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, gap: 10, flexWrap: "wrap" }}>
@@ -518,14 +452,119 @@ export default function DiagnosticV2() {
         </div>
       </div>
 
+
+      {/* ===== 判定条件の確認（推定結果） ===== */}
+      {!!text.trim() && (
+        <div className="card" style={{ background: "var(--acc-bg)", borderColor: "var(--acc-bd)", padding: "0.9rem 1.2rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12.5, color: "var(--ink2)" }}>
+              {manualPick ? "この条件で判定します：" : "本文から判定しました："}
+            </span>
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--acc)" }}>
+              {selectedIndustry?.label || "―"}
+              {sub ? `・${selectedIndustry?.subs.find((x) => x.id === sub)?.label || ""}` : ""}
+              {" ／ "}
+              {MEDIA.find((m) => m.id === media)?.label || "―"}
+            </span>
+            <button type="button" className="btn-ghost" onClick={() => setPickerOpen((v) => !v)}
+              style={{ marginLeft: "auto", borderColor: "var(--acc-bd)", color: "var(--acc)", fontWeight: 600 }}>
+              {pickerOpen ? "閉じる" : "変更する"}
+            </button>
+          </div>
+          {!manualPick && (
+            <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "8px 0 0" }}>
+              業種で適用される法令が変わります。違っていれば「変更する」で選び直してください。
+            </p>
+          )}
+        </div>
+      )}
       {/* ===== 実行 ===== */}
       <div style={{ textAlign: "center", margin: "20px 0 26px" }}>
         <button type="button" className="btn-primary" disabled={!canRun} onClick={run}>
           {loading ? "診断中..." : isOverHardLimit ? "利用上限に到達" : "リスク診断を実行 →"}
         </button>
-        {!step1Done && <p style={{ fontSize: 12, color: "var(--ink3)", marginTop: 8 }}>まず業種を選択してください</p>}
+        {!text.trim() && <p style={{ fontSize: 12, color: "var(--ink3)", marginTop: 8 }}>広告文を貼り付けてください</p>}
+        {!!text.trim() && needsClient && !clientIndustry && <p style={{ fontSize: 12, color: "#B54708", marginTop: 8 }}>受託先（広告主）の業種を選んでください</p>}
       </div>
 
+
+      {/* ===== 業種・媒体の手動選択（既定は閉じる） ===== */}
+      {(pickerOpen || (needsClient && !clientIndustry)) && (
+      <>
+      {/* ===== STEP 1 業種 ===== */}
+      <div className="card">
+        <div className="step-head">
+          <span className={`step-num ${step1Done ? "done" : ""}`}>1</span>
+          <span className="step-title">クライアントの業種</span>
+          {step1Done && <span style={{ fontSize: 12, color: "var(--acc)", fontWeight: 600 }}>✓ {selectedIndustry?.label}{sub ? `・${selectedIndustry?.subs.find((s) => s.id === sub)?.label}` : ""}</span>}
+        </div>
+        <p className="step-sub">業種で適用される法令が変わります（例：整骨院は柔整法、ペットフードは景表法＋公正競争規約）</p>
+        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(158px,1fr))" }}>
+          {INDUSTRIES.map((ind) => (
+            <button key={ind.id} type="button" className={`tile ${industry === ind.id ? "on" : ""}`}
+              onClick={() => { setManualPick(true); setIndustry(ind.id); setSub(null); if (ind.id !== "F") { setClientIndustry(null); setClientSub(null); } }}>
+              <div className="t1"><span className="ico">{ind.icon}</span>{ind.label}</div>
+              <div className="t2">{ind.desc}</div>
+            </button>
+          ))}
+        </div>
+        {selectedIndustry && (
+          <div style={{ marginTop: 12 }}>
+            <p style={{ fontSize: 12, color: "var(--ink3)", margin: "0 0 8px" }}>詳細（任意・選ぶと精度が上がります）</p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {selectedIndustry.subs.map((s) => (
+                <button key={s.id} type="button" className={`chip ${sub === s.id ? "on" : ""}`} onClick={() => { setManualPick(true); setSub(sub === s.id ? null : s.id); }}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {needsClient && (
+          <div style={{ marginTop: 14, padding: "12px 14px", background: "var(--paper2)", borderRadius: 10 }}>
+            <p style={{ fontSize: 12.5, fontWeight: 600, margin: "0 0 8px" }}>受託先（広告主）の業種 <span style={{ color: "#B42318" }}>必須</span></p>
+            <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "0 0 8px" }}>制作物は受託先業種の規制を継承します。加えてステマ規制・表示主体責任をチェックします。</p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {INDUSTRIES.filter((i) => i.id !== "F").map((i) => (
+                <button key={i.id} type="button" className={`chip ${clientIndustry === i.id ? "on" : ""}`}
+                  onClick={() => { setManualPick(true); setClientIndustry(i.id); setClientSub(null); }}>
+                  <span className="ico">{i.icon}</span>{i.label}
+                </button>
+              ))}
+            </div>
+            {clientIndustryObj && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                {clientIndustryObj.subs.map((s) => (
+                  <button key={s.id} type="button" className={`chip ${clientSub === s.id ? "on" : ""}`} onClick={() => { setManualPick(true); setClientSub(clientSub === s.id ? null : s.id); }}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ===== STEP 2 媒体 ===== */}
+      <div className="card">
+        <div className="step-head">
+          <span className={`step-num ${step2Done ? "done" : step1Done ? "" : "off"}`}>2</span>
+          <span className="step-title">広告を出す媒体</span>
+          {media && <span style={{ fontSize: 12, color: "var(--acc)", fontWeight: 600 }}>✓ {MEDIA.find((m) => m.id === media)?.label}</span>}
+        </div>
+        <p className="step-sub">媒体で「広告該当性」や要件が変わります（例：SNSはステマ規制、医療HPは限定解除）</p>
+        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))" }}>
+          {MEDIA.map((m) => (
+            <button key={m.id} type="button" className={`tile ${media === m.id ? "on" : ""}`} onClick={() => { setManualPick(true); setMedia(m.id); }}>
+              <div className="t1"><span className="ico">{m.icon}</span>{m.label}</div>
+            </button>
+          ))}
+        </div>
+        {media && <p style={{ fontSize: 11.5, color: "var(--acc)", margin: "10px 0 0" }}>◎ {MEDIA.find((m) => m.id === media)?.note}</p>}
+      </div>
+
+      </>
+      )}
       {loading && (
         <div className="card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 18, animation: "v2spin 1s linear infinite", display: "inline-block" }}>⟳</span>
@@ -660,7 +699,19 @@ export default function DiagnosticV2() {
           {a.legal_basis?.length > 0 && (
             <div className="card">
               <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 3px" }}>法的根拠</p>
-              <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 10px" }}>一次ソース（省庁・e-Gov等）で検証済みの法令データベースに基づく判定です</p>
+              <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 8px" }}>一次ソース（省庁・e-Gov等）で検証済みの法令データベースに基づく判定です</p>
+              {/* 信頼の裏づけは「使う前」でなく「判定の根拠」として出す */}
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", padding: "8px 0 12px", borderBottom: "1px solid var(--line)", marginBottom: 12 }}>
+                {[
+                  [`${stats.law_count}法令DB`, "一次ソース検証済み"],
+                  ["条文根拠つき", "law_idで法令に紐づく判定"],
+                  [`ルールブック ${stats.rule_version}`, `${stats.rule_updated} 更新・${stats.rule_count}項目`],
+                ].map(([t, d], i) => (
+                  <div key={i} style={{ fontSize: 11, color: "var(--ink3)" }}>
+                    <span style={{ color: "var(--ink)", fontWeight: 600 }}>{t}</span>　{d}
+                  </div>
+                ))}
+              </div>
               {a.legal_basis.map((b, i) => {
                 const node = res.laws?.find((l) => l.id === b.law_id);
                 return (
