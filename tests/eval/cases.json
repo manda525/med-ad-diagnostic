@@ -164,7 +164,6 @@
       "industry": "E", "sub": "cosme", "media": "lp",
       "difficulty": "easy",
       "expect": { "judgment": "修正必須", "must_not_match": [517] },
-      "known_defect": "517（シワ）が「予防」の2文字だけで一致する既知の欠陥。未修正なので、この期待値は現時点では落ちるのが正しい。直したら known_defect を消す。",
       "why": "化粧品で疾病の予防を標榜。薬機法68条。",
       "note": "2026-08-07 の実測では、シワのルール517が「予防」の2文字だけで一致していた。誤検知の測定点。",
       "label_status": "confirmed"

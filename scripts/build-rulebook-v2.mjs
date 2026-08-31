@@ -26,6 +26,8 @@ const LAW_PATTERNS = [
   [/ペットフード公正競争規約/, "L-PF-FAIR"],
   [/医療広告GL|医療広告ガイドライン/, "L-MED-AD"],
   [/医療法/, "L-MED-AD"],
+  // v44 追加：特定商取引法（通信販売）。既存の L-TOKUSHOHO は特定継続的役務提供（エステ）専用ノードなので別IDにする
+  [/特定商取引法|特商法/, "L-TOKUSHOHO-TSUHAN"],
   // v19.1 追加：あはき柔整広告GL。従来 L-SEITAI は genreLawIds() の「整体痩身」プレフィックスからしか
   // 付いておらず、ルールを別ジャンルへ横断化すると法令ノードが黙って落ちる構造だった
   // （正本 v29 で rid611/613 を 整体痩身_痩身効果 → 共通_痩身標榜 へ移した際に顕在化）。
@@ -72,6 +74,9 @@ function genreLawIds(genre) {
   if (g === "医療広告_処方箋医薬品") return ["L-MED-AD", "L-PHARM"];
   if (g.startsWith("医療広告")) return ["L-MED-AD"];
   if (g.startsWith("医療機器")) return ["L-MED-DEVICE"];
+  // v40 追加：医療機器該当性は業種横断（共通_）なので上の 医療機器 プレフィックスに当たらない。
+  // 法令欄から L-YAKKI-68 / L-YAKKI-66 は付くが、機器の法令ノードは genre からしか紐づかない。
+  if (g === "共通_医療機器該当性") return ["L-MED-DEVICE"];
   // v18 追加ジャンル
   if (g === "ペット_表示区分") return ["L-PF-FAIR", "L-KEIHYO-5"];
   if (g === "ペット_法定表示") return ["L-PF-SAFETY"];
