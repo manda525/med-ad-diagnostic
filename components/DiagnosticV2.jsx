@@ -3,10 +3,14 @@ import { INDUSTRIES, MEDIA } from "../lib/taxonomy";
 import stats from "../data/stats.json";
 import { superviseFeeFor, buildSubject, buildMetaLines, buildApplyText, buildMailto } from "../lib/supervise";
 import { inferContext } from "../lib/infer";
+import { track } from "../lib/track";
 
 // ===== 定数 =====
-const FREE_LIMIT = 3;
-const HARD_LIMIT = 6;
+// 2回終わった時点で誘導カードを出し、3回で打ち止め。
+// ⚠️ 必ず FREE < HARD にする。両方を同じ値にすると誘導カードが出る窓
+//    （usageCount >= FREE && usageCount < HARD）が消え、誘導なしで打ち止めになる。
+const FREE_LIMIT = 2;
+const HARD_LIMIT = 3;
 const LINE_URL = "https://lin.ee/7GlM6CT";
 const CONTACT_EMAIL = "masa@med-ad-masa.com";
 
@@ -185,6 +189,15 @@ export default function DiagnosticV2() {
   const needsClient = industry === "F";
   const clientIndustryObj = INDUSTRIES.find((i) => i.id === clientIndustry);
 
+  // 打ち止めに到達した瞬間を1回だけ記録する
+  const limitFired = useRef(false);
+  useEffect(() => {
+    if (isOverHardLimit && !limitFired.current) {
+      limitFired.current = true;
+      track("limit_reached", { limit: HARD_LIMIT });
+    }
+  }, [isOverHardLimit]);
+
   // 広告文が変わるたびに業種・媒体を推定する。手動で選んだ後は上書きしない。
   useEffect(() => {
     if (manualPick) return;
@@ -209,6 +222,14 @@ export default function DiagnosticV2() {
 
   const run = useCallback(async () => {
     if (!canRun) return;
+    // 計測は広告文の本文を一切送らない（文字数のみ）
+    track("diagnose_run", {
+      attempt: usageCount + 1,
+      industry: industry || "",
+      media: media || "",
+      auto_inferred: !manualPick,
+      length: text.trim().length,
+    });
     setLoading(true); setRes(null); setErr("");
     setStepMsg(`法令DB ${stats.law_count}件・ルール${stats.rule_version}（${stats.rule_count}件）から適用範囲を特定中...`);
     try {
@@ -238,7 +259,7 @@ export default function DiagnosticV2() {
     } finally {
       setLoading(false); setStepMsg("");
     }
-  }, [canRun, text, industry, sub, media, clientIndustry, clientSub]);
+  }, [canRun, text, industry, sub, media, clientIndustry, clientSub, usageCount, manualPick]);
 
   const a = res?.analysis;
   const jStyle = a ? (JUDGMENT_STYLE[a.final_judgment] || JUDGMENT_STYLE["要修正"]) : null;
@@ -386,7 +407,7 @@ export default function DiagnosticV2() {
               {isPro ? "✓ Pro（無制限）" : `残り ${Math.max(0, HARD_LIMIT - usageCount)}/${HARD_LIMIT}回`}
             </span>
             {isPro && <button className="btn-ghost" onClick={openPortal}>支払い・解約</button>}
-            <button className="btn-ghost" onClick={() => setShowContact(!showContact)} style={{ borderColor: "var(--acc-bd)", color: "var(--acc)", fontWeight: 600 }}>
+            <button className="btn-ghost" onClick={() => { if (!showContact) track("cta_supervise_click", { source: "header" }); setShowContact(!showContact); }} style={{ borderColor: "var(--acc-bd)", color: "var(--acc)", fontWeight: 600 }}>
               監修相談
             </button>
           </div>
@@ -766,7 +787,7 @@ export default function DiagnosticV2() {
               <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 10px", lineHeight: 1.7 }}>
                 無料診断は残り{Math.max(0, HARD_LIMIT - usageCount)}回。広告監修のご相談もLINEからどうぞ。
               </p>
-              <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
+              <a href={LINE_URL} target="_blank" rel="noopener noreferrer" onClick={() => track("cta_line_click", { used: usageCount })}
                 style={{ display: "inline-block", fontSize: 13.5, padding: "9px 22px", borderRadius: 8, background: "#06C755", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
                 LINE公式アカウントを登録
               </a>
@@ -803,7 +824,7 @@ export default function DiagnosticV2() {
               上記が確定料金です（原稿の追加・リライト込みをご希望の場合は別途お見積り）。納品日はご返信時に確定します。
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-              <a href={superviseMailto} onClick={handleSuperviseApply}
+              <a href={superviseMailto} onClick={(e) => { track("cta_mailto_click", { used: usageCount }); handleSuperviseApply(e); }}
                 style={{ display: "inline-block", fontSize: 14, padding: "11px 26px", borderRadius: 8, background: "var(--ink)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
                 申込内容をコピーしてメールを開く
               </a>

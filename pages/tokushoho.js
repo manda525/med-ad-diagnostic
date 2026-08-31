@@ -10,7 +10,7 @@ const rows = [
     value: "請求があったら遅滞なく開示します（受付時間：平日10:00〜17:00）",
   },
   { label: "メールアドレス", value: "masa@med-ad-masa.com" },
-  { label: "販売URL", value: "https://med-ad-diagnostic.vercel.app" },
+  { label: "販売URL", value: "https://radar.med-ad-masa.com" },
   {
     label: "販売価格",
     value: "個人プラン 月額500円（税込）／法人プラン 月額5,000円（税込）",

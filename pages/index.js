@@ -1,7 +1,7 @@
 import Head from "next/head";
 import App from "../components/DiagnosticV2";
 
-const SITE_URL = "https://med-ad-diagnostic.vercel.app";
+const SITE_URL = "https://radar.med-ad-masa.com";
 const TITLE = "薬機レーダー｜薬機法・景表法・医療広告GL AIチェック";
 const DESC =
   "業種と媒体を選んで広告文を貼るだけ。薬機法・景表法・医療広告GL・獣医療法など一次ソース検証済みの法令データベースと現場ルールで、条文根拠つきのリスク診断と修正案を返します。医療・施術・美容・EC・ペットの8業種に対応。";
