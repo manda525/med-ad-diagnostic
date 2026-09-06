@@ -2,8 +2,9 @@
   "meta": {
     "version": "v1",
     "created": "2026-07-07",
-    "note": "法令マスター。docs/law_master.md を構造化。各ルールは law_ids で本マスターに紐づく。一次ソース主義。業種H（CBD・カンナビノイド関連）は業種タクソノミー未実装のため現時点では診断に適用されない。",
-    "node_count": 30
+    "note": "法令マスター。docs/law_master.md を構造化。各ルールは law_ids で本マスターに紐づく。一次ソース主義。業種H（CBD・カンナビノイド関連）は業種タクソノミー未実装のため現時点では診断に適用されない。 動画媒体ノード（L-VIDEO-*）は verified: false ＝一次ソース本文の確認待ち。",
+    "node_count": 34,
+    "updated": "2026-09-06"
   },
   "laws": [
     {
@@ -830,6 +831,85 @@
       "source_type": "運用基準",
       "verified": false,
       "verified_date": "2026-08-07"
+    },
+    {
+      "id": "L-VIDEO-DISCLAIM",
+      "category": "景品表示法",
+      "title": "動画広告の打消し表示（表示時間・文字サイズ）",
+      "article": "景表法 第5条／消費者庁「打消し表示に関する実態調査報告書」（平成29年7月）",
+      "authority": "消費者庁",
+      "summary": "動画では打消し表示（注記・条件・個人差の但し書き）が画面に出ている時間そのものが問われる。静止画と同じ文言を入れても、表示時間が短ければ一般消費者が読み終えられず、景表法上問題となるおそれがある。文字広告のチェックでは絶対に検出できない、動画固有の論点。",
+      "key_points": [
+        "強調表示と打消し表示が別カット・離れた位置にあると、消費者は両者を結びつけて認識できない",
+        "目立つ映像・音声とともに重要な打消し表示が出ていても、その表示時間内に消費者の注意が向かない場合は問題となるおそれ",
+        "実態調査では動画広告の打消し表示の表示時間は2秒以下が42.4%（要一次確認）。業界の慣行そのものがリスク側に寄っている",
+        "テロップの表示秒数・文字サイズ・背景とのコントラストは、検収時に実測して記録する",
+        "音声（ナレーション）で補うことは有効だが、テロップを省略してよい根拠にはならない"
+      ],
+      "industries": [],
+      "media": [
+        "video"
+      ],
+      "source_urls": [
+        "https://www.caa.go.jp/policies/policy/representation/fair_labeling/survey",
+        "https://www.caa.go.jp/policies/policy/representation/fair_labeling/pdf/fair_labeling_180921_0001.pdf",
+        "https://www.caa.go.jp/policies/policy/representation/fair_labeling/pdf/fair_labeling_180607_0004.pdf"
+      ],
+      "source_type": "実態調査報告書",
+      "verified": false,
+      "verification_note": "一次ソースPDFの本文未読（開発環境から caa.go.jp へ到達不可）。まさが原文を確認し、42.4%の数値と考え方の記述を照合してから verified: true にする。"
+    },
+    {
+      "id": "L-VIDEO-AUDIO",
+      "category": "横断",
+      "title": "動画の音声・ナレーションの広告該当性",
+      "article": "薬機法 第66条／医薬品等適正広告基準／医療広告ガイドライン（広告該当性）",
+      "authority": "厚生労働省",
+      "summary": "広告該当性は誘引性と特定性で決まり、媒体や表現形式を問わない。したがってナレーション・出演者の発言・歌詞も広告表現であり、テロップだけを点検して音声を見落とす事故が動画案件では最も起きやすい。L-YAKKI-66・L-TEKISEI・L-MED-AD を動画媒体へ適用するための運用ノード。",
+      "key_points": [
+        "テロップに書いていなくても、ナレーションや出演者の発言で効能を断定すれば同じ違反になる",
+        "台本の確定稿と、納品動画の音声書き起こしを突き合わせて検収する（編集段階のアドリブ・言い換えが事故源）",
+        "適正広告基準では、テレビ・ラジオ等でしばり表現を付記（テロップ）または付言（音声）することが求められる（要一次確認）",
+        "医療機関案件では、出演患者のインタビュー音声が体験談に該当し、限定解除でも認められない",
+        "効果音・BGM・カット割りで効果を演出する編集は、文言が適正でも優良誤認のおそれを生む"
+      ],
+      "industries": [],
+      "media": [
+        "video"
+      ],
+      "source_urls": [
+        "https://www.mhlw.go.jp/file/06-Seisakujouhou-11120000-Iyakushokuhinkyoku/0000179264.pdf",
+        "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/kokokukisei/index.html"
+      ],
+      "source_type": "基準・GL",
+      "verified": false,
+      "verification_note": "一次ソースPDFの本文未読（開発環境から mhlw.go.jp へ到達不可）。適正広告基準における付記・付言の規定を原文で確認してから verified: true にする。"
+    },
+    {
+      "id": "L-VIDEO-BA",
+      "category": "横断",
+      "title": "動画のビフォーアフター・動的表現",
+      "article": "医療広告ガイドライン（限定解除4要件）／景表法 第5条第1号",
+      "authority": "厚生労働省・消費者庁",
+      "summary": "動画のビフォーアフターと動的表現。照明・角度・色調補正・BGM・時間圧縮といった編集そのものが効果の誇張になり得るため、文言が適正でも優良誤認のおそれが残る（景表法・全業種）。医療機関案件ではこれに加え、L-MED-AD の限定解除4要件を動画の尺の中でどう満たすかが問われる。",
+      "key_points": [
+        "全業種：ビフォーとアフターで照明・角度・メイク・色調補正・レンズが異なると、効果の誇張＝優良誤認のおそれ",
+        "全業種：アフター側にのみBGMの盛り上がり・効果音・スローモーションを足す編集は、映像による効果の演出",
+        "全業種：時間圧縮（早送り・タイムラプス）は、実際の所要期間を誤認させないよう期間を明示する",
+        "医療機関（A・A2）：限定解除に必要な治療内容・費用・主なリスク副作用を、ビフォーアフター映像と同じ画面か直後に、読み切れる秒数で出す",
+        "医療機関（A・A2）：患者体験談は限定解除でも広告不可。インタビュー形式の動画構成そのものを企画段階で外す"
+      ],
+      "industries": [],
+      "media": [
+        "video"
+      ],
+      "source_urls": [
+        "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/kokokukisei/index.html",
+        "https://www.mhlw.go.jp/content/001439423.pdf"
+      ],
+      "source_type": "GL",
+      "verified": false,
+      "verification_note": "根拠となる L-MED-AD・L-KEIHYO-5 は検証済。本ノードはそれを動画媒体へ適用した運用解釈であり、動画特有の秒数・演出に関する行政の明示的な記述は未確認。"
     }
   ]
 }
