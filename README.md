@@ -14,7 +14,9 @@ lib/taxonomy.js          業種（8カテゴリ）×媒体（10種）の共通�
 lib/engine.js            フィルタ→マッチング→プロンプト構築＋構造化出力スキーマ
 pages/api/diagnose.js    診断API（claude-fable-5 + opus-4-8 fallback + 構造化出力）
 components/DiagnosticV2.jsx  ウィザードUI（業種→媒体→入力→結果）
+pages/household.js       世帯の医療費計算機（段階0・無料・サーバー送信なし。lib/household.mjs が計算本体）
 docs/requirements_v2.md  要件定義書
+docs/business/goodrx_family_plan_japan.md  世帯型ヘルスケア構想メモ
 docs/law_master.md       法令マスター（人間可読版・一次ソースURL）
 ```
 
