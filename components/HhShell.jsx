@@ -1,11 +1,20 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import s from "../styles/hh.module.css";
 
 // 世帯向け計算機の共通シェル（ヘッダー・フッター・フォント・ツールチップ）
 
 export function HhShell({ current, children }) {
+  // ?embed=1 のときはヘッダー・フッターを出さない（iframe 設置用）
+  const [embed, setEmbed] = useState(false);
+  useEffect(() => {
+    try {
+      setEmbed(new URLSearchParams(window.location.search).get("embed") === "1");
+    } catch {
+      /* noop */
+    }
+  }, []);
   return (
     <div className={s.root}>
       <Head>
@@ -14,6 +23,7 @@ export function HhShell({ current, children }) {
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
       </Head>
       <div className={s.stripe} />
+      {!embed && (
       <header className={s.header}>
         <div className={s.headerInner}>
           <Link href="/household" className={s.brand}>
@@ -33,10 +43,13 @@ export function HhShell({ current, children }) {
             <Link href="/household" aria-current={current === "household" ? "page" : undefined}>世帯の医療費</Link>
             <Link href="/rx-or-otc" aria-current={current === "rxotc" ? "page" : undefined}>処方か市販薬か</Link>
             <Link href="/soudan" aria-current={current === "soudan" ? "page" : undefined}>薬のリスト整理</Link>
+            <Link href="/guide" aria-current={current === "guide" ? "page" : undefined}>解説</Link>
           </nav>
         </div>
       </header>
+      )}
       <main className={s.main}>{children}</main>
+      {!embed && (
       <footer className={s.footer}>
         <div className={s.footerInner}>
           <span>
@@ -44,10 +57,17 @@ export function HhShell({ current, children }) {
             <a href="/tokushoho">特定商取引法に基づく表記</a>
             <a href="/terms">利用規約</a>
             <a href="/privacy">プライバシーポリシー</a>
+            <a href="/embed">サイトに設置する（無料）</a>
           </span>
           <span>© 2026 Pharma-Ad Lab</span>
         </div>
       </footer>
+      )}
+      {embed && (
+        <p style={{ textAlign: "center", fontSize: 11, color: "var(--ink-3)", padding: "8px 0 16px" }}>
+          提供：<a href="/household" target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink-2)" }}>世帯の医療費計算機</a>（薬剤師が設計・Pharma-Ad Lab）
+        </p>
+      )}
     </div>
   );
 }
