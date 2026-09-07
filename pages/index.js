@@ -41,6 +41,8 @@ export default function Home() {
       <footer style={{textAlign:"center",padding:"32px 16px",fontSize:13,color:"var(--color-text-secondary)",borderTop:"0.5px solid var(--color-border-tertiary)",marginTop:24}}>
         <div style={{marginBottom:10}}>
           <a href="/consult" style={{color:"var(--color-text-info)",margin:"0 8px",fontWeight:500}}>監修サービスのご案内</a>
+          ・
+          <a href="/household" style={{color:"var(--color-text-info)",margin:"0 8px",fontWeight:500}}>世帯の医療費計算機（無料）</a>
         </div>
         <a href="/tokushoho" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>特定商取引法に基づく表記</a>
         ・
