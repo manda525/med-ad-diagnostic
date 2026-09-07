@@ -504,6 +504,16 @@ export default function Household() {
           )}
         </section>
 
+        <section style={{ ...S.card, background: "var(--color-background-info)", borderColor: "var(--color-border-info)" }}>
+          <h2 style={S.h2}>その薬、処方でもらうのと市販薬で買うのとどちらが安いか</h2>
+          <p style={S.hint}>
+            単発の症状なら、再診料や調剤料を含めると市販薬の方が安いことがあります。薬価と市販薬の価格から、受診の時間まで含めて比べる計算機を用意しました。
+          </p>
+          <Link href="/rx-or-otc" style={S.btn}>
+            処方か市販薬か、自己負担で比べる →
+          </Link>
+        </section>
+
         <section style={S.noteBox}>
           <p style={S.note}>
             このページは薬剤師が設計した家計向けの計算機で、税務・医療の判断を代替するものではありません。制度の数値は2026年9月時点の公開情報に基づく概算です。入力内容はお使いのブラウザにのみ保存され、当サイトのサーバーには送信されません。
@@ -568,7 +578,7 @@ const S = {
   },
   checks: { display: "flex", flexDirection: "column", gap: 6, margin: "0 0 12px" },
   check: { display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13, color: "var(--color-text-primary)", lineHeight: 1.6 },
-  btn: { fontSize: 13, padding: "8px 16px", borderRadius: "var(--border-radius-md)", fontWeight: 500 },
+  btn: { fontSize: 13, padding: "8px 16px", borderRadius: "var(--border-radius-md)", fontWeight: 500, display: "inline-block", textDecoration: "none", background: "var(--color-background-primary)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)" },
   btnPrimary: {
     fontSize: 14,
     padding: "10px 22px",

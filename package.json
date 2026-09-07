@@ -9,14 +9,16 @@
     "build:rulebook": "node scripts/build-rulebook-v2.mjs",
     "test:security": "node tests/usage.test.mjs",
     "test:matcher": "node tests/matcher.test.mjs",
-    "test": "npm run test:security && npm run test:matcher && npm run test:supervise && npm run test:infer && npm run test:household",
+    "test": "npm run test:security && npm run test:matcher && npm run test:supervise && npm run test:infer && npm run test:household && npm run test:rxotc",
     "eval": "node scripts/eval.mjs",
     "eval:ai": "node scripts/eval-ai.mjs",
     "test:supervise": "node tests/supervise.test.mjs",
     "test:infer": "node tests/infer.test.mjs",
-    "test:household": "node tests/household.test.mjs"
+    "test:household": "node tests/household.test.mjs",
+    "test:rxotc": "node tests/rxotc.test.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "next": "^14.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
