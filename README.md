@@ -59,6 +59,7 @@ Upstash の変数名は作り方で変わるため、次の順で探す（先に
 | `KV_REST_API_URL` | `KV_REST_API_TOKEN` | Vercel の Storage 連携（接頭辞なし） |
 | `DIAGNOSE_MODEL` | `claude-fable-5` | 診断モデル |
 | `DIAGNOSE_EFFORT` | `medium` | `output_config.effort` |
+| `NEXT_PUBLIC_GSC_VERIFICATION` | — | Google Search Console の所有権確認タグの content 値（`pages/_document.js`）。定数に直接書いてもよい |
 
 ## テスト
 
