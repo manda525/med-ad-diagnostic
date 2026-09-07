@@ -14,6 +14,7 @@ lib/taxonomy.js          業種（8カテゴリ）×媒体（10種）の共通�
 lib/engine.js            フィルタ→マッチング→プロンプト構築＋構造化出力スキーマ
 pages/api/diagnose.js    診断API（claude-fable-5 + opus-4-8 fallback + 構造化出力）
 components/DiagnosticV2.jsx  ウィザードUI（業種→媒体→入力→結果）
+pages/soudan.js          薬剤師相談（単発・Stripe都度払い。lib/usage.js の redisRaw で関心カウンタ）
 pages/rx-or-otc.js       処方か市販薬かの自己負担比較（lib/rxotc.mjs が計算本体）
 pages/household.js       世帯の医療費計算機（段階0・無料・サーバー送信なし。lib/household.mjs が計算本体）
 docs/requirements_v2.md  要件定義書
@@ -40,6 +41,7 @@ docs/law_master.md       法令マスター（人間可読版・一次ソースU
 | `STRIPE_PRICE_INDIVIDUAL` | 個人プランの price ID |
 | `STRIPE_PRICE_CORPORATE` | 法人プランの price ID |
 | `STRIPE_WEBHOOK_SECRET` | Stripe Webhook の署名シークレット |
+| `STRIPE_PRICE_CONSULT` | 薬剤師相談（単発）の price ID。未設定なら `/soudan` は準備中表示（任意） |
 | `APP_TOKEN_SECRET` | エンタイトルメントトークン＋訪問者ID Cookie の署名用。**変更すると既存の課金ユーザーのトークンが無効になる** |
 | `NEXT_PUBLIC_SITE_URL` | 本番URL（Stripeの戻り先） |
 

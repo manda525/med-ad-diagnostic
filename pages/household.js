@@ -666,6 +666,12 @@ export default function Household() {
             <p className={s.desc}>単発の症状なら、再診料や調剤料を含めると市販薬の方が安いことがあります。薬価と市販薬の価格から、受診の時間まで含めて比べる計算機を用意しました。</p>
             <Link href="/rx-or-otc" className={s.btnMint}>処方か市販薬か、自己負担で比べる →</Link>
           </section>
+
+          <section className={s.panel} style={{ background: "var(--mint-bg)", borderColor: "var(--mint-line)" }}>
+            <div className={s.panelHead}><span className={s.kicker} style={{ color: "var(--mint-deep)" }}>薬剤師に相談</span><h2 className={s.h2}>世帯の事情に合わせて、薬剤師が文章で整理します</h2></div>
+            <p className={s.desc}>親の薬が多すぎる、どれを市販薬に替えられるか分からない、領収書のどの行が控除対象か迷う。薬局に属さない薬剤師が、3営業日以内にメールで回答します（単発・都度払い）。</p>
+            <Link href="/soudan" className={s.btnMint}>相談の内容と料金を見る →</Link>
+          </section>
         </>
       )}
 
