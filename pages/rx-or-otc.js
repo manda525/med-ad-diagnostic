@@ -195,9 +195,9 @@ export default function RxOrOtc() {
       </section>
 
       <section className={s.panel} style={{ background: "var(--mint-bg)", borderColor: "var(--mint-line)" }}>
-        <div className={s.panelHead}><span className={s.kicker} style={{ color: "var(--mint-deep)" }}>薬剤師に相談</span><h2 className={s.h2}>いま飲んでいる薬のうち、市販薬で済むものはどれか</h2></div>
-        <p className={s.desc}>薬のリストを送ってもらえれば、薬局に属さない薬剤師が「処方のままがよいもの」「市販薬で済むもの」「医師に確認すべきもの」に分けて、3営業日以内にメールで回答します（単発・都度払い）。</p>
-        <a href="/soudan" className={s.btnMint}>相談の内容と料金を見る →</a>
+        <div className={s.panelHead}><span className={s.kicker} style={{ color: "var(--mint-deep)" }}>薬のリスト整理</span><h2 className={s.h2}>いま飲んでいる薬のうち、市販薬で済むものはどれか</h2></div>
+        <p className={s.desc}>薬のリストを貼ると、薬剤師が設計したAIが「処方のままが自然」「市販薬で済む可能性」「医師・薬剤師に確認」に分けます。無料、登録不要、リストは保存しません。</p>
+        <a href="/soudan" className={s.btnMint}>薬のリストを整理する →</a>
       </section>
 
       <section className={s.basis}>
