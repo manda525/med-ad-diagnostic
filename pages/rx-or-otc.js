@@ -194,6 +194,12 @@ export default function RxOrOtc() {
         )}
       </section>
 
+      <section className={s.panel} style={{ background: "var(--mint-bg)", borderColor: "var(--mint-line)" }}>
+        <div className={s.panelHead}><span className={s.kicker} style={{ color: "var(--mint-deep)" }}>薬剤師に相談</span><h2 className={s.h2}>いま飲んでいる薬のうち、市販薬で済むものはどれか</h2></div>
+        <p className={s.desc}>薬のリストを送ってもらえれば、薬局に属さない薬剤師が「処方のままがよいもの」「市販薬で済むもの」「医師に確認すべきもの」に分けて、3営業日以内にメールで回答します（単発・都度払い）。</p>
+        <a href="/soudan" className={s.btnMint}>相談の内容と料金を見る →</a>
+      </section>
+
       <section className={s.basis}>
         <h2>根拠と確認日</h2>
         <ul>

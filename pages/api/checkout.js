@@ -4,7 +4,9 @@ import { getBaseUrl } from "../../lib/baseUrl";
 const PRICE_BY_PLAN = {
   individual: process.env.STRIPE_PRICE_INDIVIDUAL,
   corporate: process.env.STRIPE_PRICE_CORPORATE,
+  consult: process.env.STRIPE_PRICE_CONSULT, // 薬剤師相談（単発・都度払い）
 };
+const ONE_TIME_PLANS = new Set(["consult"]);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -30,13 +32,17 @@ export default async function handler(req, res) {
   try {
     const stripe = getStripe();
     const baseUrl = getBaseUrl(req);
+    const oneTime = ONE_TIME_PLANS.has(plan);
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
+      mode: oneTime ? "payment" : "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${baseUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/?checkout=cancel`,
+      success_url: oneTime
+        ? `${baseUrl}/soudan/thanks?session_id={CHECKOUT_SESSION_ID}`
+        : `${baseUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: oneTime ? `${baseUrl}/soudan?checkout=cancel` : `${baseUrl}/?checkout=cancel`,
       allow_promotion_codes: true,
       locale: "ja",
+      ...(oneTime ? { customer_creation: "always" } : {}),
     });
     return res.status(200).json({ url: session.url });
   } catch (e) {
