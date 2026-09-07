@@ -13,6 +13,11 @@ import {
 // 段階0：世帯の医療費計算機（無料・登録不要・データはブラウザ内のみ）
 // 要配慮個人情報をサーバーへ送らない。保存先は localStorage だけ。
 
+const SITE_URL = "https://med-ad-diagnostic.vercel.app";
+const PAGE_URL = `${SITE_URL}/household`;
+const PAGE_TITLE = "世帯の医療費計算機｜マイナポータルに載らない医療費まで集計 | 薬機レーダー";
+const PAGE_DESC =
+  "家族全員の医療費を、先発品の特別の料金・市販薬・自由診療などマイナポータルの医療費通知に載らない分まで集計し、医療費控除とセルフメディケーション税制のどちらが有利かを概算します。薬剤師が設計。登録不要、データはブラウザ内だけに保存。";
 const STORAGE_KEY = "household-medical-v1";
 const YEAR = new Date().getFullYear();
 
@@ -154,13 +159,37 @@ export default function Household() {
   return (
     <>
       <Head>
-        <title>世帯の医療費計算機｜マイナポータルに載らない分まで | 薬機レーダー</title>
-        <meta
-          name="description"
-          content="家族全員の医療費を、長期収載品の特別の料金・市販薬・自由診療などマイナポータルの医療費通知に載らない分まで集計し、医療費控除とセルフメディケーション税制のどちらが有利かを概算します。登録不要、データはブラウザ内だけに保存。"
-        />
+        <title>{PAGE_TITLE}</title>
+        <meta name="description" content={PAGE_DESC} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="robots" content="noindex" />
+        <link rel="canonical" href={PAGE_URL} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={PAGE_URL} />
+        <meta property="og:title" content={PAGE_TITLE} />
+        <meta property="og:description" content={PAGE_DESC} />
+        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+        <meta property="og:site_name" content="薬機レーダー" />
+        <meta property="og:locale" content="ja_JP" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@Pharma_Ad_Lab" />
+        <meta name="twitter:title" content={PAGE_TITLE} />
+        <meta name="twitter:description" content={PAGE_DESC} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "世帯の医療費計算機",
+              url: PAGE_URL,
+              applicationCategory: "FinanceApplication",
+              operatingSystem: "Web",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "JPY" },
+              description: PAGE_DESC,
+              publisher: { "@type": "Organization", name: "Pharma-Ad Lab" },
+            }),
+          }}
+        />
       </Head>
 
       <div style={S.container}>
