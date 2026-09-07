@@ -16,6 +16,58 @@ const PAGE_DESC =
 const STORAGE_KEY = "household-medical-v1";
 const YEAR = new Date().getFullYear();
 const STEPS = ["家族", "支出", "条件", "結果"];
+const KANTAN_KEY = "household-kantan-v1";
+const MODE_KEY = "household-mode-v1";
+
+// かんたん入力：世帯の型と「月あたりの目安」。値は目安で、利用者が実際に合わせて変える前提
+const AMOUNTS = [0, 500, 1000, 2000, 3000, 5000, 8000, 10000, 15000, 20000, 30000, 50000];
+const KCOLS = [
+  { key: "insured", label: "病院・薬局の窓口", sub: "保険診療の自己負担" },
+  { key: "special_brand", label: "先発品の特別の料金", sub: "領収書の「選定療養」" },
+  { key: "otc", label: "市販薬", sub: "ドラッグストア" },
+  { key: "private", label: "歯科などの自費", sub: "治療目的の自由診療" },
+];
+const cell = (insured, special_brand, otc, priv) => ({ insured, special_brand, otc, private: priv });
+const TEMPLATES = [
+  { key: "senior", label: "高齢のご夫婦", sub: "年金暮らし・月1回の通院", rate: "0.05", members: [["本人", cell(3000, 500, 1000, 0)], ["配偶者", cell(3000, 500, 1000, 0)]] },
+  { key: "three", label: "親と同居・仕送り", sub: "親の医療費も合算できる", rate: "0.1", members: [["本人", cell(1000, 0, 1000, 0)], ["配偶者", cell(1000, 0, 1000, 0)], ["父", cell(3000, 500, 1000, 0)], ["母", cell(3000, 500, 1000, 0)]] },
+  { key: "kids", label: "子育て世帯", sub: "子どもは自治体の助成で窓口0円が多い", rate: "0.1", members: [["本人", cell(1000, 0, 1500, 0)], ["配偶者", cell(1000, 0, 1500, 0)], ["子", cell(0, 0, 500, 0)]] },
+  { key: "single", label: "ひとり暮らし", sub: "自分の分だけ", rate: "0.1", members: [["本人", cell(2000, 0, 1000, 0)]] },
+];
+const buildKantan = (tplKey) => {
+  const t = TEMPLATES.find((x) => x.key === tplKey) || TEMPLATES[0];
+  return {
+    template: t.key,
+    months: "12",
+    members: t.members.map(([name, c]) => ({ id: uid(), name, cells: { ...c } })),
+    selfmedAll: true,
+    reimbursed: "",
+    incomeTaxRate: t.rate,
+    selfMedQualifies: true,
+  };
+};
+function loadKantan() {
+  try {
+    const raw = window.localStorage.getItem(KANTAN_KEY);
+    const p = raw ? JSON.parse(raw) : null;
+    if (p && Array.isArray(p.members)) return p;
+  } catch {
+    /* noop */
+  }
+  return null;
+}
+function kantanToEntries(k) {
+  const months = Number(k.months) || 12;
+  const out = [];
+  for (const m of k.members) {
+    for (const col of KCOLS) {
+      const monthly = Number(m.cells?.[col.key]) || 0;
+      if (monthly <= 0) continue;
+      out.push({ id: `${m.id}-${col.key}`, memberId: m.id, category: col.key, amount: monthly * months, treatment: true, selfmedMark: col.key === "otc" ? !!k.selfmedAll : undefined });
+    }
+  }
+  return out;
+}
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 const yen = (n) => `${Math.round(n || 0).toLocaleString("ja-JP")}円`;
@@ -67,6 +119,8 @@ export default function Household() {
   const [state, setState] = useState(DEFAULT_STATE);
   const [loaded, setLoaded] = useState(false);
   const [step, setStep] = useState(1);
+  const [mode, setMode] = useState("kantan");
+  const [kantan, setKantan] = useState(() => buildKantan("senior"));
   const [newMember, setNewMember] = useState("");
   const [form, setForm] = useState({ memberId: "self", category: "insured", amount: "", memo: "", treatment: true, selfmedMark: false });
   const [fee, setFee] = useState({ brandPrice: "", genericPrice: "", quantity: "30", ratio: "0.5" });
@@ -78,18 +132,49 @@ export default function Household() {
       setState(st);
       if (st.entries.length > 0) setStep(4);
     }
+    const k = loadKantan();
+    if (k) setKantan(k);
+    try {
+      const m = window.localStorage.getItem(MODE_KEY);
+      if (m === "detail" || m === "kantan") setMode(m);
+      else if (st && st.entries.length > 0) setMode("detail");
+    } catch {
+      /* noop */
+    }
     setLoaded(true);
   }, []);
   useEffect(() => {
     if (loaded) saveState(state);
   }, [state, loaded]);
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      window.localStorage.setItem(KANTAN_KEY, JSON.stringify(kantan));
+      window.localStorage.setItem(MODE_KEY, mode);
+    } catch {
+      /* noop */
+    }
+  }, [kantan, mode, loaded]);
 
-  const { members, entries, settings } = state;
+  const detail = state;
+  const kantanEntries = useMemo(() => kantanToEntries(kantan), [kantan]);
+  const isKantan = mode === "kantan";
+  const members = isKantan ? kantan.members : detail.members;
+  const entries = isKantan ? kantanEntries : detail.entries;
+  const settings = isKantan
+    ? { reimbursed: kantan.reimbursed, totalIncome: "", incomeTaxRate: kantan.incomeTaxRate, selfMedQualifies: kantan.selfMedQualifies }
+    : detail.settings;
   const summary = useMemo(() => summarize(entries), [entries]);
   const result = useMemo(
     () => compareDeductions({ summary, reimbursed: settings.reimbursed, totalIncome: settings.totalIncome, incomeTaxRate: Number(settings.incomeTaxRate), selfMedQualifies: settings.selfMedQualifies }),
     [summary, settings]
   );
+  const setK = (patch) => setKantan((k) => ({ ...k, ...patch }));
+  const setKCell = (id, key, v) => setKantan((k) => ({ ...k, members: k.members.map((m) => (m.id === id ? { ...m, cells: { ...m.cells, [key]: Number(v) } } : m)) }));
+  const setKName = (id, name) => setKantan((k) => ({ ...k, members: k.members.map((m) => (m.id === id ? { ...m, name } : m)) }));
+  const addKMember = () => setKantan((k) => ({ ...k, members: [...k.members, { id: uid(), name: "家族", cells: cell(0, 0, 0, 0) }] }));
+  const removeKMember = (id) => setKantan((k) => (k.members.length <= 1 ? k : { ...k, members: k.members.filter((m) => m.id !== id) }));
+  const monthsN = Number(kantan.months) || 12;
   const feeResult = useMemo(() => specialFee({ brandPrice: fee.brandPrice, genericPrice: fee.genericPrice, quantity: fee.quantity, ratio: Number(fee.ratio) }), [fee]);
 
   const update = (patch) => setState((st) => ({ ...st, ...patch }));
@@ -102,13 +187,13 @@ export default function Household() {
   const addMember = () => {
     const name = newMember.trim();
     if (!name) return;
-    update({ members: [...members, { id: uid(), name }] });
+    update({ members: [...detail.members, { id: uid(), name }] });
     setNewMember("");
   };
   const removeMember = (id) => {
-    if (members.length <= 1) return;
-    update({ members: members.filter((m) => m.id !== id), entries: entries.filter((e) => e.memberId !== id) });
-    if (form.memberId === id) setForm((f) => ({ ...f, memberId: members[0].id }));
+    if (detail.members.length <= 1) return;
+    update({ members: detail.members.filter((m) => m.id !== id), entries: detail.entries.filter((e) => e.memberId !== id) });
+    if (form.memberId === id) setForm((f) => ({ ...f, memberId: detail.members[0].id }));
   };
   const addEntry = () => {
     const amount = Math.floor(Number(form.amount));
@@ -122,13 +207,14 @@ export default function Household() {
       treatment: form.category === "otc" ? form.treatment : undefined,
       selfmedMark: form.category === "otc" ? form.selfmedMark : undefined,
     };
-    update({ entries: [entry, ...entries] });
+    update({ entries: [entry, ...detail.entries] });
     setForm((f) => ({ ...f, amount: "", memo: "" }));
   };
-  const removeEntry = (id) => update({ entries: entries.filter((e) => e.id !== id) });
+  const removeEntry = (id) => update({ entries: detail.entries.filter((e) => e.id !== id) });
   const clearAll = () => {
     if (!window.confirm("このブラウザに保存している入力をすべて消します。よろしいですか？")) return;
     setState(DEFAULT_STATE);
+    setKantan(buildKantan("senior"));
     setStep(1);
   };
   const memberName = (id) => members.find((m) => m.id === id)?.name || "（削除済み）";
@@ -197,6 +283,98 @@ export default function Household() {
         </aside>
       </div>
 
+      <div className={s.modeBar} role="tablist" aria-label="入力方法">
+        <button type="button" role="tab" aria-selected={isKantan} className={[s.modeBtn, isKantan ? s.modeOn : ""].join(" ")} onClick={() => setMode("kantan")}>かんたん入力（月の目安から）</button>
+        <button type="button" role="tab" aria-selected={!isKantan} className={[s.modeBtn, !isKantan ? s.modeOn : ""].join(" ")} onClick={() => setMode("detail")}>くわしく入力（領収書1件ずつ）</button>
+      </div>
+
+      {isKantan && (
+        <section className={`${s.panel} ${s.big}`}>
+          <div className={s.panelHead}><span className={s.kicker}>かんたん入力</span><h2 className={s.h2}>世帯の型を選ぶ</h2></div>
+          <p className={s.desc}>近い型を選ぶと、家族と月あたりの目安があらかじめ入ります。目安は実際に合わせて変えてください。結果は下に自動で出ます。</p>
+          <div className={s.tplGrid} role="radiogroup" aria-label="世帯の型">
+            {TEMPLATES.map((t) => (
+              <button key={t.key} type="button" role="radio" aria-checked={kantan.template === t.key} className={[s.tpl, kantan.template === t.key ? s.tplOn : ""].join(" ")} onClick={() => setKantan(buildKantan(t.key))}>
+                <span className={s.tplTitle}>{t.label}</span>
+                <span className={s.tplSub}>{t.sub}</span>
+              </button>
+            ))}
+          </div>
+
+          <h3 className={s.h3}>月あたりの目安（1人ずつ）</h3>
+          <span className={s.estimate}>あらかじめ入っている金額は目安です</span>
+          <div className={s.gridWrap}>
+            <table className={s.gridTable}>
+              <thead>
+                <tr>
+                  <th>家族</th>
+                  {KCOLS.map((c) => (
+                    <th key={c.key}>{c.label}<br /><span style={{ fontWeight: 400 }}>{c.sub}</span></th>
+                  ))}
+                  <th className={s.rowTotal}>年間</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {kantan.members.map((m) => {
+                  const rowSum = KCOLS.reduce((a, c) => a + (Number(m.cells?.[c.key]) || 0), 0) * monthsN;
+                  return (
+                    <tr key={m.id}>
+                      <td className={s.nameCell} data-label="家族"><input className={`${s.input} ${s.nameInput}`} value={m.name} aria-label="家族の呼び名" onChange={(e) => setKName(m.id, e.target.value)} /></td>
+                      {KCOLS.map((c) => (
+                        <td key={c.key} data-label={`${c.label}（月）`}>
+                          <select className={s.input} aria-label={`${m.name}の${c.label}（月あたり）`} value={String(Number(m.cells?.[c.key]) || 0)} onChange={(e) => setKCell(m.id, c.key, e.target.value)}>
+                            {AMOUNTS.map((a) => <option key={a} value={String(a)}>{a === 0 ? "なし" : `${a.toLocaleString("ja-JP")}円`}</option>)}
+                          </select>
+                        </td>
+                      ))}
+                      <td className={s.rowTotal} data-label="年間">{yen(rowSum)}</td>
+                      <td className={s.actCell}><button type="button" className={s.btnGhost} onClick={() => removeKMember(m.id)} aria-label={`${m.name}を削除`}>削除</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className={s.btnRow}>
+            <button type="button" className={s.btnSecondary} onClick={addKMember}>家族を1人追加</button>
+            <span className={s.help}>別居の親でも、仕送りしていれば合算できます。</span>
+          </div>
+
+          <h3 className={s.h3}>条件（あらかじめ入っています）</h3>
+          <div className={s.grid}>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="kMonths">何か月分で計算するか</label>
+              <select id="kMonths" className={s.input} value={kantan.months} onChange={(e) => setK({ months: e.target.value })}>
+                <option value="12">12か月（1年分）</option>
+                <option value="6">6か月</option>
+                <option value="3">3か月</option>
+              </select>
+            </div>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="kRate">申告する人の所得税率</label>
+              <select id="kRate" className={s.input} value={kantan.incomeTaxRate} onChange={(e) => setK({ incomeTaxRate: e.target.value })}>
+                {INCOME_TAX_RATES.map((r) => <option key={r.rate} value={String(r.rate)}>{r.label}</option>)}
+              </select>
+              <p className={s.help}>年金だけの世帯はおおむね5%です。働いている子が親の分を申告するなら、その子の税率にします。</p>
+            </div>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="kReimb">高額療養費・保険金で戻った額（円、年間）</label>
+              <input id="kReimb" className={s.input} type="number" inputMode="numeric" min="0" placeholder="0" value={kantan.reimbursed} onChange={(e) => setK({ reimbursed: e.target.value })} />
+            </div>
+          </div>
+          <div className={s.checks}>
+            <label className={s.check}><input type="checkbox" checked={kantan.selfMedQualifies} onChange={(e) => setK({ selfMedQualifies: e.target.checked })} />健康診断・特定健診・予防接種のどれかをその年に受けている（セルフメディケーション税制の要件）</label>
+            <label className={s.check}><input type="checkbox" checked={kantan.selfmedAll} onChange={(e) => setK({ selfmedAll: e.target.checked })} />買っている市販薬は、おおむね★印（セルフメディケーション税制の対象品）</label>
+          </div>
+          <div className={s.btnRow}>
+            <span className={s.help}>領収書1件ずつ正確に入れたい場合は</span>
+            <button type="button" className={s.btnGhost} onClick={() => setMode("detail")}>くわしく入力に切り替える</button>
+          </div>
+        </section>
+      )}
+
+      {!isKantan && (
       <ol className={s.steps} aria-label="入力の手順">
         {STEPS.map((label, i) => {
           const n = i + 1;
@@ -212,7 +390,9 @@ export default function Household() {
         })}
       </ol>
 
-      {step === 1 && (
+      )}
+
+      {!isKantan && step === 1 && (
         <section className={s.panel}>
           <div className={s.panelHead}>
             <span className={s.kicker}>STEP 1</span>
@@ -244,7 +424,7 @@ export default function Household() {
         </section>
       )}
 
-      {step === 2 && (
+      {!isKantan && step === 2 && (
         <section className={s.panel}>
           <div className={s.panelHead}>
             <span className={s.kicker}>STEP 2</span>
@@ -356,7 +536,7 @@ export default function Household() {
         </section>
       )}
 
-      {step === 3 && (
+      {!isKantan && step === 3 && (
         <section className={s.panel}>
           <div className={s.panelHead}>
             <span className={s.kicker}>STEP 3</span>
@@ -396,11 +576,11 @@ export default function Household() {
         </section>
       )}
 
-      {step === 4 && (
+      {(isKantan || step === 4) && (
         <>
-          <section className={s.panel}>
+          <section className={`${s.panel} ${isKantan ? s.big : ""}`}>
             <div className={s.panelHead}>
-              <span className={s.kicker}>STEP 4</span>
+              <span className={s.kicker}>{isKantan ? "結果" : "STEP 4"}</span>
               <h2 className={s.h2}>世帯の結果（概算）</h2>
             </div>
             <div className={s.kpis}>
@@ -475,7 +655,7 @@ export default function Household() {
               戻る税金は、控除額×所得税率（復興特別所得税を含む）＋控除額×住民税率10%の概算です。実際の還付額は他の控除や源泉徴収額で変わります。申告は国税庁の確定申告書等作成コーナーか税理士へ。この計算機は「載らない分を落とさないためのチェックリスト」としてお使いください。
             </p>
             <div className={s.btnRow}>
-              <button type="button" className={s.btnSecondary} onClick={() => goto(2)}>支出を追加・修正する</button>
+              {!isKantan && <button type="button" className={s.btnSecondary} onClick={() => goto(2)}>支出を追加・修正する</button>}
               <span className={s.spacer} />
               <button type="button" className={s.btnGhost} onClick={clearAll}>このブラウザの入力をすべて消す</button>
             </div>

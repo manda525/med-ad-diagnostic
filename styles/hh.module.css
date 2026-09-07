@@ -168,3 +168,35 @@
 .footer { border-top: 1px solid var(--line); background: var(--surface); }
 .footerInner { max-width: 960px; margin: 0 auto; padding: 22px 20px; font-size: 12px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
 .footerInner a { color: var(--ink-2); margin-right: 12px; }
+
+/* かんたん入力（高齢者・世帯の型から） */
+.big { font-size: 16px; }
+.big .input { height: 50px; font-size: 17px; }
+.big .label { font-size: 14.5px; }
+.modeBar { display: flex; gap: 8px; margin-bottom: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px; }
+.modeBtn { flex: 1; height: 46px; border-radius: 7px; border: none; background: none; font-size: 15px; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.modeOn { background: var(--blue-deep); color: #fff; }
+.tplGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.tpl { text-align: left; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; padding: 14px 14px; cursor: pointer; display: grid; gap: 4px; color: var(--ink); }
+.tpl:hover { border-color: var(--line-strong); }
+.tplOn { border-color: var(--blue); background: var(--blue-bg); box-shadow: inset 0 0 0 1px var(--blue); }
+.tplTitle { font-size: 16px; font-weight: 700; }
+.tplSub { font-size: 12.5px; color: var(--ink-2); }
+.gridTable { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.gridTable th { text-align: left; font-size: 12.5px; color: var(--ink-2); padding: 6px 6px; vertical-align: bottom; line-height: 1.4; }
+.gridTable td { padding: 5px 6px; vertical-align: middle; }
+.gridTable .input { height: 44px; font-size: 16px; padding: 0 8px; }
+.nameInput { min-width: 96px; font-weight: 700; }
+.rowTotal { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+.gridWrap { overflow-x: auto; margin: 6px 0 10px; }
+.estimate { font-size: 12px; color: var(--mint-deep); background: var(--mint-bg); border: 1px solid var(--mint-line); border-radius: 6px; padding: 4px 8px; display: inline-block; margin-bottom: 8px; }
+@media (max-width: 640px) {
+  .gridTable thead { display: none; }
+  .gridTable, .gridTable tbody { display: block; }
+  .gridTable tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 10px; background: #fbfcfe; }
+  .gridTable td { display: block; padding: 0; }
+  .gridTable td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; color: var(--ink-2); font-weight: 700; margin-bottom: 3px; }
+  .gridTable td.nameCell { grid-column: 1 / -1; }
+  .gridTable td.rowTotal { text-align: left; align-self: end; padding-top: 6px; }
+  .gridTable td.actCell { text-align: right; align-self: end; }
+}
