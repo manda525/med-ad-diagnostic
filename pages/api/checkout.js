@@ -4,9 +4,9 @@ import { getBaseUrl } from "../../lib/baseUrl";
 const PRICE_BY_PLAN = {
   individual: process.env.STRIPE_PRICE_INDIVIDUAL,
   corporate: process.env.STRIPE_PRICE_CORPORATE,
-  consult: process.env.STRIPE_PRICE_CONSULT, // 薬剤師相談（単発・都度払い）
 };
-const ONE_TIME_PLANS = new Set(["consult"]);
+// 決済後に戻るページ。任意のURLへ飛ばさないよう許可リストで固定する
+const RETURN_PATHS = new Set(["/", "/soudan"]);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -14,11 +14,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { plan } = req.body || {};
+  const { plan, returnTo } = req.body || {};
   const priceId = PRICE_BY_PLAN[plan];
   if (!priceId) {
     return res.status(400).json({ error: "Invalid plan" });
   }
+  const back = RETURN_PATHS.has(returnTo) ? returnTo : "/";
 
   // 安全ガード：本番(production)以外のデプロイ（プレビュー等）では live 鍵での本番決済をブロック（誤課金防止）。
   // その環境にテストモードの鍵(sk_test_)を設定すれば、テスト決済は通常どおり動作する。
@@ -32,17 +33,13 @@ export default async function handler(req, res) {
   try {
     const stripe = getStripe();
     const baseUrl = getBaseUrl(req);
-    const oneTime = ONE_TIME_PLANS.has(plan);
     const session = await stripe.checkout.sessions.create({
-      mode: oneTime ? "payment" : "subscription",
+      mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: oneTime
-        ? `${baseUrl}/soudan/thanks?session_id={CHECKOUT_SESSION_ID}`
-        : `${baseUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: oneTime ? `${baseUrl}/soudan?checkout=cancel` : `${baseUrl}/?checkout=cancel`,
+      success_url: `${baseUrl}${back}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}${back}?checkout=cancel`,
       allow_promotion_codes: true,
       locale: "ja",
-      ...(oneTime ? { customer_creation: "always" } : {}),
     });
     return res.status(200).json({ url: session.url });
   } catch (e) {

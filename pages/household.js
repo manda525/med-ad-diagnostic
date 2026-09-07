@@ -668,9 +668,9 @@ export default function Household() {
           </section>
 
           <section className={s.panel} style={{ background: "var(--mint-bg)", borderColor: "var(--mint-line)" }}>
-            <div className={s.panelHead}><span className={s.kicker} style={{ color: "var(--mint-deep)" }}>薬剤師に相談</span><h2 className={s.h2}>世帯の事情に合わせて、薬剤師が文章で整理します</h2></div>
-            <p className={s.desc}>親の薬が多すぎる、どれを市販薬に替えられるか分からない、領収書のどの行が控除対象か迷う。薬局に属さない薬剤師が、3営業日以内にメールで回答します（単発・都度払い）。</p>
-            <Link href="/soudan" className={s.btnMint}>相談の内容と料金を見る →</Link>
+            <div className={s.panelHead}><span className={s.kicker} style={{ color: "var(--mint-deep)" }}>薬のリスト整理</span><h2 className={s.h2}>親の薬、どれが市販薬で済むか。お薬手帳を貼るだけ</h2></div>
+            <p className={s.desc}>薬のリストを貼ると、薬剤師が設計したAIが「処方のままが自然」「市販薬で済む可能性」「医師・薬剤師に確認」に分けます。無料、登録不要、リストは保存しません。</p>
+            <Link href="/soudan" className={s.btnMint}>薬のリストを整理する →</Link>
           </section>
         </>
       )}

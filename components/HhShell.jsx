@@ -32,7 +32,7 @@ export function HhShell({ current, children }) {
           <nav className={s.headerNav} aria-label="計算機">
             <Link href="/household" aria-current={current === "household" ? "page" : undefined}>世帯の医療費</Link>
             <Link href="/rx-or-otc" aria-current={current === "rxotc" ? "page" : undefined}>処方か市販薬か</Link>
-            <Link href="/soudan" aria-current={current === "soudan" ? "page" : undefined}>薬剤師に相談</Link>
+            <Link href="/soudan" aria-current={current === "soudan" ? "page" : undefined}>薬のリスト整理</Link>
           </nav>
         </div>
       </header>
