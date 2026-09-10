@@ -1,4 +1,7 @@
-# Google Search Console 登録の手順（直前まで準備済み）
+# Google Search Console 登録（完了済み・2026-09-09）
+
+まさが所有権確認とサイトマップ送信を完了した。以下は実施記録。
+
 
 所要：まさ 5分（うち待ち時間を除く）。私がやれない部分は「サイト所有者としての操作」だけ。
 
@@ -21,3 +24,10 @@
 ## 代替（私に貼りたくない場合）
 
 Vercel のプロジェクト → Settings → Environment Variables に `NEXT_PUBLIC_GSC_VERIFICATION` として値を入れ、Redeploy する。
+
+
+## 実施記録
+
+- 2026-09-09：所有権確認（HTMLタグ方式）完了。`pages/_document.js` の `GSC_VERIFICATION` 定数に確認用文字列を設定済み
+- 2026-09-09：`sitemap.xml`（当時13件）を送信済み
+- インデックス登録の進捗は Search Console の「ページ」メニューで確認できる。数日〜2週間で反映が進む見込み
