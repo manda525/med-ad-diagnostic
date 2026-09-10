@@ -439,8 +439,18 @@ export default function DiagnosticV2() {
           <span className="step-title" style={{ fontSize: 16 }}>広告文を貼り付ける</span>
         </div>
         <p className="step-sub" style={{ marginLeft: 0 }}>LP文言・SNS投稿・パッケージ文言などをそのまま貼り付けてください（8,000文字まで）。業種と媒体は本文から自動で判定します。</p>
+        {media === "video" && (
+          /* 動画で最も多い事故は、テロップだけ点検して音声を見落とすこと。
+             広告該当性は媒体や表現形式を問わないため、ナレーションも同じ広告表現になる（L-VIDEO-AUDIO）。 */
+          <p style={{ fontSize: 11.5, color: "var(--acc)", margin: "0 0 10px", lineHeight: 1.7 }}>
+            ◎ 動画はナレーションや出演者の発言も広告表現です。テロップだけでなく、読み上げる原稿も含めて貼り付けてください。<br />
+            ◎ 注記が読み切れる秒数で出ているか、ビフォーアフターの見せ方は、文字だけでは判定できません。納品前の検収で確認します。
+          </p>
+        )}
         <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
-          placeholder={"例：飲むだけでみるみる痩せる！医師も推奨するサプリで、糖尿病の予防にも。"} />
+          placeholder={media === "video"
+            ? "例：（テロップ）このサプリで必ず痩せる／（ナレーション）飲むだけで、みるみる変わります。"
+            : "例：飲むだけでみるみる痩せる！医師も推奨するサプリで、糖尿病の予防にも。"} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, gap: 10, flexWrap: "wrap" }}>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             <span style={{ fontSize: 11, color: "var(--ink3)" }}>サンプル:</span>
