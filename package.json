@@ -9,11 +9,13 @@
     "build:rulebook": "node scripts/build-rulebook-v2.mjs",
     "test:security": "node tests/usage.test.mjs",
     "test:matcher": "node tests/matcher.test.mjs",
-    "test": "npm run test:security && npm run test:matcher && npm run test:supervise && npm run test:infer",
+    "test": "npm run test:security && npm run test:matcher && npm run test:supervise && npm run test:infer && npm run test:video-audit",
     "eval": "node scripts/eval.mjs",
     "eval:ai": "node scripts/eval-ai.mjs",
     "test:supervise": "node tests/supervise.test.mjs",
-    "test:infer": "node tests/infer.test.mjs"
+    "test:infer": "node tests/infer.test.mjs",
+    "test:video-audit": "node tests/video-audit.test.mjs",
+    "audit:video": "node scripts/video-audit.mjs"
   },
   "dependencies": {
     "next": "^14.2.5",
