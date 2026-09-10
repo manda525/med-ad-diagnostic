@@ -1,6 +1,7 @@
 # 世帯型ヘルスケア　次の一手チェックリスト（まさの手が要るもの）
 
 > 2026-09-07：工程ゼロ版に切り替えた（`launch_runbook.md`）。以下の項目はすべて任意。LINE公式（§5）は当面やらない。
+> 2026-09-09：Google Search Console の所有権確認とサイトマップ送信は完了（`search_console_steps.md`）。以下の該当項目は完了扱いに更新。
 
 作成：2026-09-07　／　対象：段階0公開後〜段階1着手前
 
@@ -18,12 +19,16 @@
 
 新規アカウントは作らない。理由は、B2C向けの発信もまず既存の「医療広告コンサル｜まさ」に載せ、反応を見てから分けるか決める方が、ゼロからフォロワーを作るより速いため。分けるとしたら、世帯向けサービスの名称が決まった時点。
 
-## 2. 検索登録（所要 15分）
+## 2. 検索登録（完了・2026-09-09）
 
-| 項目 | 用意した状態 | まさがやること |
-|---|---|---|
-| sitemap / robots | `public/sitemap.xml` `public/robots.txt` を配信中 | Google Search Console で https://med-ad-diagnostic.vercel.app を登録（所有権確認は HTMLタグ方式か DNS）。サイトマップに `sitemap.xml` を送信 |
-| インデックス依頼 | — | Search Console の URL 検査で `/household` と `/rx-or-otc` のインデックス登録をリクエスト |
+| 項目 | 状態 |
+|---|---|
+| sitemap / robots | `public/sitemap.xml`（13 URL）`public/robots.txt` を配信中。AIクローラー向けに `public/llms.txt` も追加 |
+| Search Console 所有権確認 | 完了（HTMLタグ方式） |
+| サイトマップ送信 | 完了 |
+| インデックス登録 | 進行中。Search Console の「ページ」メニューで確認できる。数日〜2週間で反映 |
+
+残るのは任意：Search Console の URL 検査で `/household` `/rx-or-otc` `/soudan` の個別インデックス登録をリクエストすると、自然クロールより早く載ることがある（1ページ1分程度）。
 
 ## 3. 需要計測（所要 3分）
 
