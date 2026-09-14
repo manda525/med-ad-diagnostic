@@ -59,7 +59,7 @@ export function HhShell({ current, children }) {
             <a href="/privacy">プライバシーポリシー</a>
             <a href="/embed">サイトに設置する（無料）</a>
           </span>
-          <span>© 2026 Pharma-Ad Lab</span>
+          <span>© 2026 <a href="https://med-ad-masa.com" target="_blank" rel="noopener noreferrer">Pharma-Ad Lab</a></span>
         </div>
       </footer>
       )}

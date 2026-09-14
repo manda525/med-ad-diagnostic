@@ -49,7 +49,7 @@ export default function Home() {
         <a href="/terms" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>利用規約</a>
         ・
         <a href="/privacy" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>プライバシーポリシー</a>
-        <div style={{marginTop:8}}>© 2026 Pharma-Ad Lab</div>
+        <div style={{marginTop:8}}>© 2026 <a href="https://med-ad-masa.com" target="_blank" rel="noopener noreferrer" style={{color:"inherit"}}>Pharma-Ad Lab</a></div>
       </footer>
     </>
   );
