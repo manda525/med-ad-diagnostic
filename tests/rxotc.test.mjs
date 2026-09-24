@@ -26,17 +26,17 @@ test("copay: 10円未満四捨五入", () => {
 test("prescriptionCost: 単独受診・3割・ロキソプロフェン後発10錠", () => {
   const r = prescriptionCost({ price: 10.5, quantity: 10, ratio: 0.3, standalone: true, otcLike: false });
   const clinic = 76 + 2 + 52 + 60; // 190点
-  const tech = 45 + 24 + 10 + 45; // 124点
+  const tech = 47 + 24 + 10 + 59; // 140点（令和8年6月〜）
   assert.equal(r.points.clinic, clinic);
   assert.equal(r.points.pharmacyTech, tech);
   assert.equal(r.points.drug, 10);
   assert.equal(r.clinicCopay, 570); // 1900×0.3=570
-  assert.equal(r.pharmacyCopay, 400); // (124+10)×10×0.3=402 → 400
+  assert.equal(r.pharmacyCopay, 450); // (140+10)×10×0.3=450
   assert.equal(r.specialFee, 0);
-  assert.equal(r.total, 970);
+  assert.equal(r.total, 1020);
 });
 
-test("prescriptionCost: 定期受診のついでなら薬剤調剤料と薬剤料だけ", () => {
+test("prescriptionCost: 定期受診のついでなら薬剤調製料と薬剤料だけ", () => {
   const r = prescriptionCost({ price: 10.5, quantity: 10, ratio: 0.3, standalone: false });
   assert.equal(r.points.clinic, 0);
   assert.equal(r.points.pharmacyTech, DEFAULT_POINTS.chozai);
@@ -48,7 +48,7 @@ test("prescriptionCost: OTC類似薬の特別の料金は薬剤費の1/4", () =>
   const r = prescriptionCost({ price: 10.5, quantity: 10, ratio: 0.3, standalone: true, otcLike: true });
   assert.equal(r.drugYen, 105);
   assert.equal(r.specialFee, 26);
-  assert.equal(r.total, 970 + 26);
+  assert.equal(r.total, 1020 + 26);
 });
 
 test("prescriptionCost: 負担0割（子ども医療費助成）でも特別の料金は残る", () => {
@@ -65,12 +65,12 @@ test("prescriptionCost: 点数を上書きできる", () => {
 
 test("compareRxOtc: 単発の症状はOTCが安く、時間を入れると差が広がる", () => {
   const r = compareRxOtc({ price: 10.5, quantity: 10, ratio: 0.3, standalone: true, otcLike: false, otcPrice: 800, hours: 1.5, hourlyValue: 1000 });
-  assert.equal(r.rx.total, 970);
+  assert.equal(r.rx.total, 1020);
   assert.equal(r.otc, 800);
   assert.equal(r.cheaper, "otc");
-  assert.equal(r.diff, 170);
+  assert.equal(r.diff, 220);
   assert.equal(r.timeCost, 1500);
-  assert.equal(r.rxWithTime, 2470);
+  assert.equal(r.rxWithTime, 2520);
   assert.equal(r.cheaperWithTime, "otc");
 });
 

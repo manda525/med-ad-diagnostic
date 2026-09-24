@@ -72,7 +72,7 @@ export default function RxOrOtc() {
           <h2>答えを分けるのは「受診のしかた」</h2>
           <ul>
             <li>この薬のためだけに受診する → 受診料と調剤の技術料が丸ごとかかる</li>
-            <li>定期受診のついで → 追加は薬剤調剤料と薬代だけ</li>
+            <li>定期受診のついで → 追加は薬剤調製料と薬代だけ</li>
             <li>2027年3月〜（予定）：市販薬に似た処方薬に薬剤費の1/4の特別の料金</li>
           </ul>
         </aside>
@@ -203,12 +203,12 @@ export default function RxOrOtc() {
       <section className={s.basis}>
         <h2>根拠と確認日</h2>
         <ul>
-          <li>再診料76点・物価対応料2点・外来管理加算52点：令和8年6月改定の値（二次情報で確認、2026-09-07）。<a href="https://www.mhlw.go.jp/stf/newpage_71068.html" target="_blank" rel="noopener noreferrer">厚生労働省 令和8年度診療報酬改定</a></li>
-          <li>処方箋料60点・調剤基本料1 45点・薬剤調剤料24点・服薬管理指導料45点：令和6年度の値。令和8年度点数表での再確認が必要。<a href="https://www.nichiyaku.or.jp/yakuzaishi/pharmacy-info/document/r08" target="_blank" rel="noopener noreferrer">日本薬剤師会 改定資料</a></li>
+          <li>再診料76点・物価対応料（再診時）2点・処方箋料60点：令和8年6月1日施行の値。<a href="https://www.nichiyaku.or.jp/files/co/pharmacy-info/2026/20260402_03.pdf" target="_blank" rel="noopener noreferrer">日本薬剤師会 令和８年度調剤改定項目 新旧対照表（医科関係部分）</a>で確認（2026-09-24）。外来管理加算52点は令和8年度の改定項目に含まれず据え置き</li>
+          <li>調剤基本料1 47点・薬剤調製料（内服薬・1剤）24点・調剤管理料（27日分以下）10点・服薬管理指導料59点（3か月以内に再度処方箋を持参した患者は45点）：令和8年6月1日施行の値。<a href="https://www.nichiyaku.or.jp/files/co/pharmacy-info/2026/20260528_01.pdf" target="_blank" rel="noopener noreferrer">日本薬剤師会 調剤報酬点数表一覧（R8.6.1〜）</a>で確認（2026-09-24）</li>
           <li>OTC類似薬の特別の料金：<a href="https://www.mhlw.go.jp/content/12401000/001629737.pdf" target="_blank" rel="noopener noreferrer">厚生労働省 資料</a>。77成分・薬剤費の1/4、2027年3月施行想定。確認日 2026-09-07</li>
           <li>薬価：日経メディカル処方薬事典（ロキソプロフェンNa錠60mg 10.5円、ロキソニン錠60mg 10.8円、2026年8月時点）</li>
         </ul>
-        <p className={s.help} style={{ marginTop: 10 }}>点数は2026年9月時点の公開情報に基づく概算で、一部は令和8年度点数表での再確認が必要です。入力内容はサーバーへ送信されません。</p>
+        <p className={s.help} style={{ marginTop: 10 }}>点数は令和8年6月1日施行の点数表で確認した値（確認日 2026-09-24）に基づく概算です。薬局の届出区分や加算により実際の額は変わります。入力内容はサーバーへ送信されません。</p>
       </section>
     </HhShell>
   );
