@@ -5,7 +5,8 @@ import { HhShell, Tip } from "../components/HhShell";
 import s from "../styles/hh.module.css";
 
 // 薬のリスト整理（AI一次整理）。薬剤師が設計したプロンプトで、費用と制度の観点だけを整理する。
-// 無料枠は薬機レーダーの診断と共通（訪問者あたり6回）。個人プラン（月額500円）で無制限。
+// 無料枠は薬機レーダーの診断と共通（訪問者あたり1日5回・24時間で復活）。
+// 個人プランの決済コード（Stripe）は残しているが、2026-09-24 から画面には出さない。
 
 const SITE_URL = "https://med-ad-diagnostic.vercel.app";
 const PAGE_URL = `${SITE_URL}/soudan`;
@@ -109,7 +110,7 @@ export default function Soudan() {
         body: JSON.stringify({ text, age, visit }),
       });
       const d = await r.json().catch(() => ({}));
-      if (d.usage && typeof d.usage.used === "number") setUsage({ used: d.usage.used, limit: d.usage.limit || 6, pro: !!d.usage.pro });
+      if (d.usage && typeof d.usage.used === "number") setUsage({ used: d.usage.used, limit: d.usage.limit || 5, pro: !!d.usage.pro });
       if (r.status === 402) {
         setNeedUpgrade(true);
         setErr(d.error || "無料枠の上限に達しました。");
@@ -173,7 +174,7 @@ export default function Soudan() {
           <p className={s.lead}>
             お薬手帳の内容を貼ると、薬剤師が設計したAIが1剤ずつ、先発か後発か、同じ成分の市販薬があるか、2027年のOTC類似薬の対象になり得るかを整理し、3つに分けます。費用と制度の観点だけを扱い、薬をやめる・替える判断はしません。
           </p>
-          <div className={s.trust}><span>無料枠 {usage.pro ? "無制限（個人プラン）" : `残り${remaining}回`}</span><span>薬のリストは保存しない</span><span>薬剤師が設計</span></div>
+          <div className={s.trust}><span>無料 {usage.pro ? "無制限" : `本日あと${remaining}回`}</span><span>薬のリストは保存しない</span><span>薬剤師が設計</span></div>
         </div>
         <aside className={s.heroAside}>
           <h2>貼り方</h2>
@@ -212,18 +213,18 @@ export default function Soudan() {
         </div>
         <div className={s.btnRow}>
           <button type="button" className={s.btnPrimary} onClick={run} disabled={loading || !text.trim()}>{loading ? "整理しています（30秒ほど）…" : "AIで整理する"}</button>
-          {!usage.pro && <span className={s.help}>無料枠：残り{remaining}回（薬機レーダーの診断と共通）</span>}
+          {!usage.pro && <span className={s.help}>無料：本日あと{remaining}回（薬機レーダーの診断と共通・24時間で復活）</span>}
         </div>
         {err && <p className={s.notice}>{err}</p>}
         {needUpgrade && (
           <div className={s.verdict} style={{ marginTop: 12 }}>
             <span className={s.verdictIcon} aria-hidden="true">¥</span>
             <div>
-              <p className={s.verdictTitle}>無料枠を使い切りました。個人プラン（月額500円）で回数無制限になります</p>
-              <p className={s.verdictText}>薬機レーダーの広告診断も同じプランで無制限です。いつでも解約できます。</p>
+              <p className={s.verdictTitle}>本日の無料枠（5回）を使い切りました。24時間後にまた使えます</p>
+              <p className={s.verdictText}>家族の薬のリストが多い場合や急ぎの場合は、薬剤師が直接整理します。メールで薬のリストを送ってください。</p>
               <div className={s.btnRow} style={{ marginTop: 10 }}>
-                <button type="button" className={s.btnPrimary} onClick={upgrade} disabled={checkoutBusy}>{checkoutBusy ? "決済ページを開いています…" : "個人プランに申し込む（月額500円）"}</button>
-                <Link href="/tokushoho" className={s.help}>特定商取引法に基づく表記</Link>
+                <a href="mailto:masa@med-ad-masa.com?subject=薬のリスト整理の相談" className={s.btnPrimary}>薬剤師にメールで相談する</a>
+                <Link href="/guide" className={s.help}>先に解説記事を読む</Link>
               </div>
             </div>
           </div>

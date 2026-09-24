@@ -5,11 +5,15 @@ import { superviseFeeFor, buildSubject, buildMetaLines, buildApplyText, buildMai
 import { inferContext } from "../lib/infer";
 
 // ===== 定数 =====
+// 無料枠は1日5回（サーバー側 lib/usage.js と揃える）。3回目以降はLINE案内を出す。
 const FREE_LIMIT = 3;
-const HARD_LIMIT = 6;
+const HARD_LIMIT = 5;
 const LINE_URL = "https://lin.ee/7GlM6CT";
 const CONTACT_EMAIL = "masa@med-ad-masa.com";
 
+// 有料プラン（Stripe）の決済コードは残すが、2026-09-24 から画面には出さない。
+// 課金は機械の一次チェックでなく人の監修で行う。
+// eslint-disable-next-line no-unused-vars
 const PLANS = [
   { key: "individual", label: "個人プラン", price: "¥500", unit: "/月", note: "個人・小規模の方向け" },
   { key: "corporate", label: "法人プラン", price: "¥5,000", unit: "/月", note: "チーム・代理店向け" },
@@ -383,7 +387,7 @@ export default function DiagnosticV2() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
             <span style={{ fontSize: 11, color: "var(--ink3)" }}>
-              {isPro ? "✓ Pro（無制限）" : `残り ${Math.max(0, HARD_LIMIT - usageCount)}/${HARD_LIMIT}回`}
+              {isPro ? "✓ Pro（無制限）" : `無料・本日あと ${Math.max(0, HARD_LIMIT - usageCount)}/${HARD_LIMIT}回`}
             </span>
             {isPro && <button className="btn-ghost" onClick={openPortal}>支払い・解約</button>}
             <button className="btn-ghost" onClick={() => setShowContact(!showContact)} style={{ borderColor: "var(--acc-bd)", color: "var(--acc)", fontWeight: 600 }}>
@@ -411,25 +415,17 @@ export default function DiagnosticV2() {
       {/* ===== 上限到達 ===== */}
       {isOverHardLimit && (
         <div className="card" style={{ borderColor: "#FEC84B", background: "#FFFCF5" }}>
-          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 8px", color: "#B54708" }}>無料診断回数を使い切りました</p>
+          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 8px", color: "#B54708" }}>本日の無料診断（5回）を使い切りました。24時間後にまた使えます</p>
           <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 12px", lineHeight: 1.7 }}>
-            プランに登録すると引き続きご利用いただけます（いつでも解約可能）。
+            入稿が近い原稿は、薬剤師・薬機法管理者が人の目で確定させます。3円/文字（最低1万円）、1営業日以内に返信します。
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
-            {PLANS.map((p) => (
-              <button key={p.key} type="button" onClick={() => startCheckout(p.key)} disabled={checkoutLoading !== ""}
-                className="tile" style={{ flex: "1 1 200px", opacity: checkoutLoading !== "" && checkoutLoading !== p.key ? 0.5 : 1 }}>
-                <span className="t1">{p.label}</span>
-                <span style={{ display: "block", fontSize: 20, fontWeight: 700, color: "var(--acc)", margin: "2px 0" }}>
-                  {p.price}<span style={{ fontSize: 12, fontWeight: 400 }}>{p.unit}</span>
-                </span>
-                <span className="t2">{checkoutLoading === p.key ? "決済ページへ移動中..." : p.note}</span>
-              </button>
-            ))}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <a href={`mailto:${CONTACT_EMAIL}?subject=広告監修の申込&body=【原稿】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【入稿予定日】`}
+              style={{ display: "inline-block", fontSize: 14, padding: "11px 26px", borderRadius: 8, background: "var(--ink)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
+              薬剤師の監修に出す
+            </a>
+            <a href="/consult" style={{ fontSize: 13, color: "var(--acc)", fontWeight: 600, textDecoration: "none" }}>監修サービスの詳細 →</a>
           </div>
-          <a href={`mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談`} style={{ fontSize: 13, color: "var(--acc)", fontWeight: 600, textDecoration: "none" }}>
-            または監修相談する →
-          </a>
         </div>
       )}
 
@@ -764,7 +760,7 @@ export default function DiagnosticV2() {
             <div className="card" style={{ background: "#ECFDF3", borderColor: "#75E0A7" }}>
               <p style={{ fontSize: 13.5, fontWeight: 600, margin: "0 0 6px", color: "#067647" }}>LINE登録で最新の法規制アップデートを配信中</p>
               <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 10px", lineHeight: 1.7 }}>
-                無料診断は残り{Math.max(0, HARD_LIMIT - usageCount)}回。広告監修のご相談もLINEからどうぞ。
+                無料診断は本日あと{Math.max(0, HARD_LIMIT - usageCount)}回（24時間で復活）。広告監修のご相談もLINEからどうぞ。
               </p>
               <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
                 style={{ display: "inline-block", fontSize: 13.5, padding: "9px 22px", borderRadius: 8, background: "#06C755", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
