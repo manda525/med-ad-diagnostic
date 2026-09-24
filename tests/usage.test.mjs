@@ -174,12 +174,18 @@ console.log("6. IP単位の連打制限（10分あたり）");
 
 // =============================================================
 console.log("7. Cookieを保持しない利用者への対策（IP単位の1日上限）");
-// 連打制限の窓が明けても、同じIPからは1日12回で止まること
+// 連打制限の窓が明けても、同じIPからは1日の上限（LIMITS.freePerIpPerDay）で止まること
 // =============================================================
 {
   const ip = "10.7.0.1";
   let ok = 0;
+  // 1日の上限（25）は連打の窓（10分12回）より大きいので、12回ごとに時計を11分進めて
+  // 連打制限に当たらないようにし、日次上限だけを検査する。
+  const realNow = Date.now;
+  let shift = 0;
+  Date.now = () => realNow() + shift;
   for (let i = 0; i < u.LIMITS.freePerIpPerDay; i++) {
+    if (i > 0 && i % u.LIMITS.burstPerIpPerWindow === 0) shift += 11 * 60 * 1000;
     // Cookie を保持しない利用者を模して、毎回別の訪問者IDにする
     const r = await u.reserveQuota({ visitorId: `nocookie-${i}`, ip, pro: false });
     if (r.allowed) ok++;
@@ -187,8 +193,7 @@ console.log("7. Cookieを保持しない利用者への対策（IP単位の1日�
   check(`Cookieを変えても1日${u.LIMITS.freePerIpPerDay}件までは通る`, ok === u.LIMITS.freePerIpPerDay, `${ok}件`);
 
   // 連打の窓（10分）を跨がせる。日単位のキーは残るため、次は日次上限で止まるはず。
-  const realNow = Date.now;
-  Date.now = () => realNow() + 11 * 60 * 1000;
+  shift += 11 * 60 * 1000;
   const after = await u.reserveQuota({ visitorId: "nocookie-next", ip, pro: false });
   Date.now = realNow;
 
