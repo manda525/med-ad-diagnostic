@@ -1,6 +1,6 @@
 import {
   layoutClips, esc, lineWidthEm, fitFontSize, findPositionConflicts,
-  telopFilter, buildFilterComplex, POSITIONS,
+  telopFilter, buildFilterComplex, POSITIONS, scrimFilter,
 } from "../lib/videoAssemble.js";
 
 let pass = 0, fail = 0;
@@ -45,6 +45,16 @@ const fc = buildFilterComplex(
   [{ telop: { start: 0, end: 5, text: "あ" }, file: "/tmp/t.txt" }], "/f.ttf");
 check("全カットを concat する", fc.filter.includes("concat=n=2:v=1:a=0[base]") && fc.total === 10);
 check("縦型1080x1920にそろえる", fc.filter.includes("crop=1080:1920"));
+
+console.log("\n[見た目]");
+const fb = telopFilter({ start: 0, end: 3, text: "あ" }, "/t", "/f");
+check("既定は黒帯", fb.includes("box=1"));
+const fs2 = telopFilter({ start: 0, end: 3, text: "あ" }, "/t", "/f", 0.3, "shadow");
+check("shadow は帯なしで縁と影", !fs2.includes("box=1") && fs2.includes("borderw=") && fs2.includes("shadowy="));
+check("size で文字を大きくできる", telopFilter({ start: 0, end: 3, text: "あ", size: 80 }, "/t", "/f").includes("fontsize=80"));
+check("size を上げても画面幅には収める", telopFilter({ start: 0, end: 3, text: "あ".repeat(20), size: 120 }, "/t", "/f").includes(`fontsize=${Math.floor(1080 * 0.88 / 20)}`));
+const fcS = buildFilterComplex([{ file: "a", duration: 5 }], [], "/f", { scrim: true });
+check("scrim を指定すると下側を暗くする", fcS.filter.includes(scrimFilter()));
 
 console.log(`\n=== pass ${pass} / fail ${fail} ===`);
 process.exit(fail ? 1 : 0);

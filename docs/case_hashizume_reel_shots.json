@@ -1,0 +1,92 @@
+[
+  {
+    "out": "s1.mp4",
+    "image": "shimizu_naname_blur.jpg",
+    "duration": 5,
+    "from": [
+      0.12,
+      0.34,
+      0.95
+    ],
+    "to": [
+      0.3,
+      0.4,
+      0.88
+    ]
+  },
+  {
+    "out": "s2.mp4",
+    "image": "shimizu_shomen.jpg",
+    "duration": 5,
+    "from": [
+      0.14,
+      0.48,
+      0.98
+    ],
+    "to": [
+      0.15,
+      0.42,
+      0.76
+    ]
+  },
+  {
+    "out": "s3.mp4",
+    "image": "shimizu_naname_blur.jpg",
+    "duration": 5,
+    "from": [
+      0.3,
+      0.45,
+      0.95
+    ],
+    "to": [
+      0.62,
+      0.42,
+      0.8
+    ]
+  },
+  {
+    "out": "s4.mp4",
+    "image": "shimizu_shomen.jpg",
+    "duration": 5,
+    "from": [
+      0.44,
+      0.5,
+      0.92
+    ],
+    "to": [
+      0.66,
+      0.45,
+      0.8
+    ]
+  },
+  {
+    "out": "s5.mp4",
+    "image": "shimizu_naname_blur.jpg",
+    "duration": 5,
+    "from": [
+      0.82,
+      0.55,
+      0.86
+    ],
+    "to": [
+      0.8,
+      0.5,
+      0.68
+    ]
+  },
+  {
+    "out": "s6.mp4",
+    "image": "shimizu_shomen.jpg",
+    "duration": 6.5,
+    "from": [
+      0.45,
+      0.52,
+      0.7
+    ],
+    "to": [
+      0.45,
+      0.5,
+      1.0
+    ]
+  }
+]

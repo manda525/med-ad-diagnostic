@@ -6,6 +6,7 @@
 // manifest はテロップ台本（audit:video と同じ形式）に clips を足したもの。
 //   "clips": [{ "file": "c1.mp4", "duration": 5, "source": "shimizu.jpg" }, ...]
 //   "bgm": "bgm.mp3"   ← 任意
+//   "telopStyle": "shadow"  ← 帯なしの白文字。下側を暗くする scrim が自動で付く（既定は "box"）
 // source には動画AIへ渡した元写真を書く。書いておくと、生成された動画の1コマ目が
 // 元写真からどれだけ変わったかを測り、建物や看板が作り替えられていないかの目安にする。
 //
@@ -70,7 +71,10 @@ const { filter, total, laid } = (() => {
     fs.writeFileSync(f, String(t.text));
     return { telop: t, file: f };
   });
-  return buildFilterComplex(clips, telopFiles, FONT);
+  return buildFilterComplex(clips, telopFiles, FONT, {
+    style: manifest.telopStyle || "box",
+    scrim: manifest.scrim ?? manifest.telopStyle === "shadow",
+  });
 })();
 if (manifest.duration != null && Math.abs(total - manifest.duration) > 0.05) {
   console.error(`カット尺の合計 ${total}s と台本の尺 ${manifest.duration}s が合わない`);

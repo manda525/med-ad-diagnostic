@@ -96,3 +96,34 @@ npm run assemble:video -- 台本.json --out 完成.mp4 --dir 素材フォルダ
 
 - Pexelsの規約に、動画生成AIへの入力を明示的に扱った記述があるかは未確認（この環境から pexels.com に直接アクセスできない）。人物なしの風景に限っているのでリスクは小さいが、公開前にまさがライセンスページを確認する
 - リンク先の募集要項（職業安定法の明示事項12項目）は未作成。`docs/case_hashizume_recruit.md` §5 の項目を父・母から取る
+
+---
+
+## 6. 実写真版（2026-10-02 作成）
+
+Veoを待たずに、ドライブにあったしみず薬局の実写真2枚（斜めからの外観・正面の外観）だけで30秒強のリールを作った。写真の中身には手を加えず、切り出す位置と大きさを時間で動かしている（`scripts/photo-motion.py`）。動画AIを通さないので、建物や看板が作り替えられる心配がない。
+
+- カットの動き：`docs/case_hashizume_reel_shots.json`
+- 台本：`docs/case_hashizume_reel.json`（帯なしの白文字＋下側を暗くする scrim）
+- 入口ガラス戸の写真は営業時間が写っていて、勤務時間と取り違えられるおそれがあるため使っていない
+- 斜めからの外観写真には、落語会のポスター（実在の芸人の顔写真と「9月20日」の日付入り）と、人の顔が並んだ催しのポスターが貼られていた。求人広告に著名人の顔が映ると関係があるように見え、過ぎた日付は映像全体を古く見せる。ポスターの範囲だけを周りの壁の色で埋め、縁をぼかして消した（`shimizu_naname_blur.jpg`）。店舗の建物・看板には手を加えていない
+- 写真そのものはリポジトリに入れていない（このリポジトリは公開のため）
+
+ポスターを消す前処理（範囲は元写真 1477×1108 での座標）：
+
+```bash
+ffmpeg -i shimizu_naname.jpg -filter_complex \
+ "gradients=s=146x212:c0=0x6c827d:c1=0x92a399:x0=73:y0=0:x1=73:y1=212:nb_colors=2:d=1:r=1,format=yuv444p,noise=alls=6:allf=u,boxblur=1[fill];\
+  color=black:s=146x212,format=gray,drawbox=x=10:y=10:w=126:h=192:color=white:t=fill,boxblur=8:2[m];\
+  [fill][m]alphamerge[fm];[0:v][fm]overlay=520:590" -frames:v 1 -q:v 2 shimizu_naname_blur.jpg
+```
+
+```bash
+python3 scripts/photo-motion.py docs/case_hashizume_reel_shots.json --dir 写真フォルダ --outdir 出力 \
+  --grade "eq=contrast=1.04:saturation=1.10,colorbalance=rm=0.02:bm=-0.02,vignette=PI/6"
+npm run assemble:video -- docs/case_hashizume_reel.json --dir 出力 --out 完成.mp4
+```
+
+最初の版は募集案内（30文字）を4.8秒しか出しておらず、検収が書き出しを止めた。文字は削らず最後のカットを6.5秒に延ばして通した。行動を決める場面なので、読む時間を削らないほうがいい。
+
+Veoのカット（海・川など）が用意できれば、冒頭の差し替えや、なかむら薬局のカットの追加で厚みを出せる。
