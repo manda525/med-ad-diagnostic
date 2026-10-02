@@ -16,6 +16,8 @@ pages/api/diagnose.js    診断API（claude-fable-5 + opus-4-8 fallback + 構造
 components/DiagnosticV2.jsx  ウィザードUI（業種→媒体→入力→結果）
 lib/videoAudit.js        動画テロップの検収（表示秒数・打消し表示の同時性・PR表記・禁止語）
 scripts/video-audit.mjs  検収CLI。NGがあれば終了コード1
+lib/videoAssemble.js     動画AIのカットを繋ぎテロップを焼き込むフィルタの組み立て
+scripts/assemble-video.mjs  仕上げCLI。検収→重なり確認→元写真との一致度→コマ一覧→書き出し→再検収
 docs/requirements_v2.md  要件定義書
 docs/law_master.md       法令マスター（人間可読版・一次ソースURL）
 docs/video_ops.md        動画案件の運用設計（工程・発注仕様・検収・単価）
@@ -77,6 +79,14 @@ npm run audit:video -- docs/case_hashizume_recruit_telops.json --video 納品.mp
 ```
 
 読了速度の超過、最低表示秒数の不足、打消し表示が強調表示と別カットになっていないか、PR表記が冒頭にあるか、必須項目の欠落、確定稿に残った仮テキストや求人NG表現を判定する。NGが1件でもあれば終了コード1。閾値（`lib/videoAudit.js` の `DEFAULT_THRESHOLDS`）は実務上の設計値であって、行政が定めた基準値ではない。
+
+動画AI（Veo等）で作ったカットの仕上げは次のコマンドで行う。テロップは動画AIに描かせず、ここで焼き込む。
+
+```bash
+npm run assemble:video -- 台本.json --out 完成.mp4 --dir 素材フォルダ
+```
+
+テロップにNGがある、同じ位置のテロップが重なる、カット尺の合計が台本と合わない、のいずれかなら書き出さずに止まる。各カットの1コマ目を元写真と比べた一致度と、コマ一覧の画像も出す。手順の詳細は `docs/case_hashizume_recruit_veo.md` §4。
 
 ## ルール更新フロー
 
