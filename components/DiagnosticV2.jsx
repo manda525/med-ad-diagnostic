@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { INDUSTRIES, MEDIA } from "../lib/taxonomy";
 import stats from "../data/stats.json";
-import { superviseFeeFor, buildSubject, buildMetaLines, buildApplyText, buildMailto } from "../lib/supervise";
+import { superviseFeeFor, buildSubject, buildMetaLines, buildApplyText, buildMailto, feeBreakdown, yen } from "../lib/supervise";
+import { saveLocal } from "../lib/superviseLocal";
 import { inferContext } from "../lib/infer";
 import { classifyFailure, RECORDED_FAILURE_KINDS } from "../lib/failure";
 import {
@@ -125,6 +126,8 @@ export default function DiagnosticV2() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [failure, setFailure] = useState(null); // 直近の診断失敗（lib/failure.js の分類）
   const [resultAt, setResultAt] = useState(null); // 表示中の結果の診断日時（PDFの見出し用）
+  const [supBusy, setSupBusy] = useState(false); // 監修の依頼を作って支払い画面へ移動中
+  const [supError, setSupError] = useState("");
 
   // 課金・利用回数
   const [usageCount, setUsageCount] = useState(0);
@@ -350,6 +353,7 @@ export default function DiagnosticV2() {
   // URL に載せると、日本語のエンコードで長さが原稿量に比例して伸び、Windows/Outlook の
   // 上限（約2,000字）を超えてメーラーが起動しなくなるため（tests/supervise.test.mjs）。
   const superviseFee = superviseFeeFor(text.length);
+  const supPrice = feeBreakdown(text.length); // 税込の内訳（支払い画面と同じ計算）
 
   const superviseMeta = useMemo(() => {
     if (!a) return null;
@@ -363,7 +367,7 @@ export default function DiagnosticV2() {
       length: text.length,
       fee: superviseFee,
     };
-    return { subject: buildSubject(common), lines: buildMetaLines(common) };
+    return { common, subject: buildSubject(common), lines: buildMetaLines(common) };
   }, [a, industry, sub, media, text.length, superviseFee]);
 
   const superviseApplyText = useMemo(
@@ -417,6 +421,44 @@ export default function DiagnosticV2() {
     },
     [superviseApplyText, superviseMailto, legacyCopy]
   );
+
+  // 依頼を作って、Stripe の支払い画面へ移る。金額はサーバーが文字数から決める。
+  // 支払い画面へ移ると画面の状態が消えるので、原稿は依頼IDとひも付けて端末にだけ残す。
+  const handleSuperviseCheckout = useCallback(async () => {
+    if (!superviseMeta || supBusy) return;
+    setSupBusy(true);
+    setSupError("");
+    try {
+      const r = await fetch("/api/supervise/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          length: text.length,
+          industryLabel: superviseMeta.common.industryLabel,
+          subLabel: superviseMeta.common.subLabel,
+          mediaLabel: superviseMeta.common.mediaLabel,
+          judgment: superviseMeta.common.judgment,
+          riskScore: superviseMeta.common.riskScore,
+        }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || !data.url || !data.id) {
+        setSupError(data.error || "お支払いの画面を開けませんでした。メールでお申し込みください。");
+        setSupBusy(false);
+        return;
+      }
+      saveLocal(getStorage(), {
+        id: data.id,
+        createdAt: new Date().toISOString(),
+        text,
+        meta: superviseMeta.common,
+      });
+      window.location.href = data.url;
+    } catch {
+      setSupError("通信に失敗しました。メールでお申し込みください。");
+      setSupBusy(false);
+    }
+  }, [superviseMeta, supBusy, text]);
 
   return (
     <div className="v2">
@@ -931,23 +973,39 @@ export default function DiagnosticV2() {
                 <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>¥{superviseFee.toLocaleString()}{superviseFee === 10000 && text.length * 3 < 10000 ? "（最低受託料金）" : ""}</p>
               </div>
               <div>
-                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>ご返信</p>
-                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>1営業日以内</p>
+                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>お支払い額（税込）</p>
+                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>¥{yen(supPrice.total)}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>納品の目安</p>
+                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>原稿の受領から2営業日</p>
               </div>
             </div>
             <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "0 0 12px", lineHeight: 1.6 }}>
-              上記が確定料金です（原稿の追加・リライト込みをご希望の場合は別途お見積り）。納品日はご返信時に確定します。
+              上記が確定料金です（消費税 ¥{yen(supPrice.tax)} を加えた額をお支払いいただきます。原稿の追加・リライト込みをご希望の場合は別途お見積り）。
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <button type="button" onClick={handleSuperviseCheckout} disabled={supBusy}
+                style={{ fontSize: 14, padding: "11px 26px", borderRadius: 8, border: "none", background: "var(--ink)", color: "#fff", fontWeight: 600, cursor: supBusy ? "wait" : "pointer", opacity: supBusy ? 0.6 : 1 }}>
+                {supBusy ? "お支払い画面を開いています…" : `依頼してお支払いへ（税込 ¥${yen(supPrice.total)}）`}
+              </button>
               <a href={superviseMailto} onClick={handleSuperviseApply}
-                style={{ display: "inline-block", fontSize: 14, padding: "11px 26px", borderRadius: 8, background: "var(--ink)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-                申込内容をコピーしてメールを開く
+                className="btn-ghost" style={{ display: "inline-block", fontSize: 13, padding: "11px 20px", textDecoration: "none" }}>
+                支払いは後で（メールで申し込む）
               </a>
               <a href={`mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`}
                 className="btn-ghost" style={{ display: "inline-block", fontSize: 13, padding: "11px 20px", textDecoration: "none" }}>
                 まずは無料で相談する
               </a>
             </div>
+
+            <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "10px 0 0", lineHeight: 1.7 }}>
+              クレジットカード決済（Stripe）です。お支払い後に依頼IDが発行され、原稿をメールでお送りいただくと、確認中・納品済みの状態をこの画面で確認できます。
+              {" "}<a href="/supervise" style={{ color: "var(--acc)" }}>依頼の状況を見る</a>
+            </p>
+            {supError && (
+              <p role="alert" style={{ fontSize: 12.5, color: "#B42318", margin: "8px 0 0", lineHeight: 1.7 }}>{supError}</p>
+            )}
 
             {copyState === "ok" && (
               <p style={{ fontSize: 12.5, color: "var(--acc)", margin: "10px 0 0", lineHeight: 1.7 }}>

@@ -1,4 +1,6 @@
 import { getStripe } from "../../lib/stripe";
+import { getStore } from "../../lib/requestStore";
+import { handlePaidSession } from "../../lib/superviseRequest";
 
 export const config = { api: { bodyParser: false } };
 
@@ -29,6 +31,22 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error("webhook signature verification failed:", e.message);
     return res.status(400).json({ error: `Webhook Error: ${e.message}` });
+  }
+
+  // 監修の依頼（単発の支払い）。サブスクの処理とは別に、支払い済みなら依頼を受付済みにする。
+  // 保存先に書けなかったときは 500 を返し、Stripe に再送してもらう。
+  if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
+    const session = event.data.object;
+    if (session.metadata && session.metadata.kind === "supervise") {
+      try {
+        const r = await handlePaidSession({ store: getStore(), session });
+        if (!r.ok) console.error("[webhook] supervise payment not applied:", r.reason, r.id || "");
+      } catch (e) {
+        console.error("[webhook] supervise payment store error:", e.message);
+        return res.status(500).json({ error: "Store unavailable" });
+      }
+      return res.status(200).json({ received: true });
+    }
   }
 
   switch (event.type) {
