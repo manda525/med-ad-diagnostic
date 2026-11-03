@@ -3,6 +3,11 @@ import { INDUSTRIES, MEDIA } from "../lib/taxonomy";
 import stats from "../data/stats.json";
 import { superviseFeeFor, buildSubject, buildMetaLines, buildApplyText, buildMailto } from "../lib/supervise";
 import { inferContext } from "../lib/infer";
+import { classifyFailure, RECORDED_FAILURE_KINDS } from "../lib/failure";
+import {
+  getStorage, readHistory, writeHistory, clearHistory, addEntry, removeEntry,
+  buildDoneEntry, buildFailedEntry, entryToResult,
+} from "../lib/history";
 
 // ===== 定数 =====
 // 無料枠は1日5回（サーバー側 lib/usage.js と揃える）。3回目以降はLINE案内を出す。
@@ -69,6 +74,24 @@ function highlightText(text, riskItems) {
   return spans;
 }
 
+// ===== 履歴の表示用 =====
+function formatAt(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function contextLabel(e) {
+  const ind = INDUSTRIES.find((i) => i.id === e.industry);
+  const med = MEDIA.find((m) => m.id === e.media);
+  const subLabel = e.sub ? ind?.subs.find((x) => x.id === e.sub)?.label : "";
+  return `${ind?.label || "―"}${subLabel ? `・${subLabel}` : ""} ／ ${med?.label || "―"}`;
+}
+function snippet(text) {
+  const t = String(text).replace(/\s+/g, " ").trim();
+  return t.length > 44 ? `${t.slice(0, 44)}…` : t;
+}
+
 // ===== メイン =====
 export default function DiagnosticV2() {
   // ウィザード状態
@@ -93,6 +116,15 @@ export default function DiagnosticV2() {
   const [copyState, setCopyState] = useState(null); // null | "ok" | "fail"
   const [showApplyText, setShowApplyText] = useState(false);
   const resultRef = useRef(null);
+  const inputRef = useRef(null);
+  const historyRef = useRef(null);
+
+  // 診断履歴。この端末のブラウザだけに保存する（lib/history.js）。サーバーには送らない。
+  const [history, setHistory] = useState([]);
+  const [histTab, setHistTab] = useState("all"); // all | done | failed
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [failure, setFailure] = useState(null); // 直近の診断失敗（lib/failure.js の分類）
+  const [resultAt, setResultAt] = useState(null); // 表示中の結果の診断日時（PDFの見出し用）
 
   // 課金・利用回数
   const [usageCount, setUsageCount] = useState(0);
@@ -119,6 +151,11 @@ export default function DiagnosticV2() {
   useEffect(() => {
     refreshUsage();
   }, [refreshUsage]);
+
+  // 履歴はマウント後に読む（サーバー描画とクライアントの初回描画を一致させるため）
+  useEffect(() => {
+    setHistory(readHistory(getStorage()));
+  }, []);
 
   // Stripe Checkout からの復帰
   useEffect(() => {
@@ -213,8 +250,18 @@ export default function DiagnosticV2() {
 
   const run = useCallback(async () => {
     if (!canRun) return;
-    setLoading(true); setRes(null); setErr("");
+    setLoading(true); setRes(null); setErr(""); setFailure(null);
     setStepMsg(`法令DB ${stats.law_count}件・ルール${stats.rule_version}（${stats.rule_count}件）から適用範囲を特定中...`);
+    const context = { industry, sub, media, clientIndustry, clientSub };
+    // 失敗の表示と、履歴への記録。サーバーが失敗を返したときは利用回数は減っていない
+    // （診断APIが枠の予約を戻す）。通信が途切れたときだけは断定できない。→ lib/failure.js
+    const failWith = (info) => {
+      setFailure(info);
+      if (RECORDED_FAILURE_KINDS.has(info.kind)) {
+        setHistory((prev) => writeHistory(getStorage(), addEntry(prev, buildFailedEntry({ context, text, failure: info }))));
+      }
+      refreshUsage(); // 回数の表示を、サーバーの値に合わせ直す
+    };
     try {
       const entToken = typeof window !== "undefined" ? (window.localStorage.getItem("med_ad_token") || "") : "";
       setStepMsg("AI診断中...（業種×媒体の法令コンテキストで判定しています）");
@@ -232,17 +279,67 @@ export default function DiagnosticV2() {
         setUsageCount(data.usage.used);
         setIsPro(!!data.usage.pro);
       }
-      if (r.status === 402) { setErr(data.error || "無料診断の上限に達しました。"); return; }
-      if (r.status === 429) { setErr(data.error || "リクエストが集中しています。しばらく置いてからお試しください。"); return; }
-      if (!r.ok) throw new Error(data.error || `API応答エラー (${r.status})`);
+      if (!r.ok) { failWith(classifyFailure({ status: r.status, message: data.error })); return; }
+      if (!data.analysis) { failWith(classifyFailure({ status: 502 })); return; }
       setRes(data);
+      setResultAt(new Date().toISOString());
+      setHistory((prev) => writeHistory(getStorage(), addEntry(prev, buildDoneEntry({ context, text, result: data }))));
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-    } catch (e) {
-      setErr(e.message || "診断に失敗しました。もう一度お試しください。");
+    } catch {
+      // fetch が例外になった＝サーバーの応答を受け取れていない
+      failWith(classifyFailure({ network: true }));
     } finally {
       setLoading(false); setStepMsg("");
     }
-  }, [canRun, text, industry, sub, media, clientIndustry, clientSub]);
+  }, [canRun, text, industry, sub, media, clientIndustry, clientSub, refreshUsage]);
+
+  // 履歴から入力を戻す。結果があるものは結果も戻す。診断はし直さない（回数を使わない）。
+  const restoreEntry = useCallback((entry, withResult) => {
+    setManualPick(true);
+    setIndustry(entry.industry); setSub(entry.sub); setMedia(entry.media);
+    setClientIndustry(entry.clientIndustry); setClientSub(entry.clientSub);
+    setText(entry.text);
+    setErr(""); setFailure(null);
+    setShowApplyText(false); setCopyState(null); setShowRules(false);
+    const restored = withResult ? entryToResult(entry) : null;
+    setRes(restored);
+    setResultAt(restored ? entry.at : null);
+    setTimeout(() => {
+      const el = restored ? resultRef.current : inputRef.current;
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!restored && inputRef.current) inputRef.current.focus({ preventScroll: true });
+    }, 60);
+  }, []);
+
+  const deleteEntry = useCallback((id) => {
+    setHistory((prev) => writeHistory(getStorage(), removeEntry(prev, id)));
+  }, []);
+
+  const clearAllHistory = useCallback(() => {
+    clearHistory(getStorage());
+    setHistory([]);
+    setConfirmClear(false);
+  }, []);
+
+  // PDF保存はブラウザの印刷機能を使う（保存先に「PDFとして保存」を選ぶ）。
+  // 既定のファイル名がタイトルになるため、印刷の間だけタイトルを差し替える。
+  const savePdf = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, "0");
+    const prev = document.title;
+    document.title = `薬機レーダー診断結果_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
+    const restore = () => { document.title = prev; window.removeEventListener("afterprint", restore); };
+    window.addEventListener("afterprint", restore);
+    window.print();
+  }, []);
+
+  const shownHistory = useMemo(
+    () => history.filter((e) => histTab === "all" || (histTab === "done" ? e.status === "done" : e.status === "failed")),
+    [history, histTab]
+  );
+  const doneCount = history.filter((e) => e.status === "done").length;
+  const failedCount = history.length - doneCount;
 
   const a = res?.analysis;
   const jStyle = a ? (JUDGMENT_STYLE[a.final_judgment] || JUDGMENT_STYLE["要修正"]) : null;
@@ -365,10 +462,19 @@ export default function DiagnosticV2() {
         .v2 textarea:focus { border-color:var(--acc) !important; box-shadow:0 0 0 3px var(--acc-bg); }
         @keyframes v2spin { to { transform: rotate(360deg); } }
         @media (max-width:560px){ .v2 .card{ padding:1rem 1rem; } }
+        .v2 .print-only { display:none; }
+        @media print {
+          .v2 .no-print { display:none !important; }
+          .v2 .print-only { display:block !important; }
+          footer { display:none !important; }
+          .v2 { padding:0; }
+          .v2 .card { break-inside:avoid; }
+          .v2 mark, .v2 .card { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        }
       ` }} />
 
       {/* ===== ヘッダー ===== */}
-      <div style={{ marginBottom: 20 }}>
+      <div className="no-print" style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
           <div>
             <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "var(--acc)", fontWeight: 600, margin: "0 0 6px" }}>
@@ -390,6 +496,11 @@ export default function DiagnosticV2() {
               {isPro ? "✓ Pro（無制限）" : `無料・本日あと ${Math.max(0, HARD_LIMIT - usageCount)}/${HARD_LIMIT}回`}
             </span>
             {isPro && <button className="btn-ghost" onClick={openPortal}>支払い・解約</button>}
+            {history.length > 0 && (
+              <button className="btn-ghost" type="button" onClick={() => historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                履歴 {history.length}件
+              </button>
+            )}
             <button className="btn-ghost" onClick={() => setShowContact(!showContact)} style={{ borderColor: "var(--acc-bd)", color: "var(--acc)", fontWeight: 600 }}>
               監修相談
             </button>
@@ -398,7 +509,7 @@ export default function DiagnosticV2() {
       </div>
 
       {showContact && (
-        <div className="card" style={{ background: "var(--acc-bg)", borderColor: "var(--acc-bd)" }}>
+        <div className="card no-print" style={{ background: "var(--acc-bg)", borderColor: "var(--acc-bd)" }}>
           <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: "var(--acc)" }}>広告監修・コンサルティングのご相談</p>
           <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 10px", lineHeight: 1.7 }}>
             LP全文精査・薬機法対応・継続監修契約など、薬剤師×医療広告コンプライアンス専門家として対応します。
@@ -414,7 +525,7 @@ export default function DiagnosticV2() {
 
       {/* ===== 上限到達 ===== */}
       {isOverHardLimit && (
-        <div className="card" style={{ borderColor: "#FEC84B", background: "#FFFCF5" }}>
+        <div className="card no-print" style={{ borderColor: "#FEC84B", background: "#FFFCF5" }}>
           <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 8px", color: "#B54708" }}>本日の無料診断（5回）を使い切りました。24時間後にまた使えます</p>
           <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 12px", lineHeight: 1.7 }}>
             入稿が近い原稿は、薬剤師・薬機法管理者が人の目で確定させます。3円/文字（最低1万円）、1営業日以内に返信します。
@@ -430,12 +541,12 @@ export default function DiagnosticV2() {
       )}
 
       {/* ===== STEP 3 入力 ===== */}
-      <div className="card">
+      <div className="card no-print">
         <div className="step-head">
           <span className="step-title" style={{ fontSize: 16 }}>広告文を貼り付ける</span>
         </div>
         <p className="step-sub" style={{ marginLeft: 0 }}>LP文言・SNS投稿・パッケージ文言などをそのまま貼り付けてください（8,000文字まで）。業種と媒体は本文から自動で判定します。</p>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
+        <textarea ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
           placeholder={"例：飲むだけでみるみる痩せる！医師も推奨するサプリで、糖尿病の予防にも。"} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, gap: 10, flexWrap: "wrap" }}>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
@@ -451,7 +562,7 @@ export default function DiagnosticV2() {
 
       {/* ===== 判定条件の確認（推定結果） ===== */}
       {!!text.trim() && (
-        <div className="card" style={{ background: "var(--acc-bg)", borderColor: "var(--acc-bd)", padding: "0.9rem 1.2rem" }}>
+        <div className="card no-print" style={{ background: "var(--acc-bg)", borderColor: "var(--acc-bd)", padding: "0.9rem 1.2rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span style={{ fontSize: 12.5, color: "var(--ink2)" }}>
               {manualPick ? "この条件で判定します：" : "本文から判定しました："}
@@ -475,7 +586,7 @@ export default function DiagnosticV2() {
         </div>
       )}
       {/* ===== 実行 ===== */}
-      <div style={{ textAlign: "center", margin: "20px 0 26px" }}>
+      <div className="no-print" style={{ textAlign: "center", margin: "20px 0 26px" }}>
         <button type="button" className="btn-primary" disabled={!canRun} onClick={run}>
           {loading ? "診断中..." : isOverHardLimit ? "利用上限に到達" : "リスク診断を実行 →"}
         </button>
@@ -486,7 +597,7 @@ export default function DiagnosticV2() {
 
       {/* ===== 業種・媒体の手動選択（既定は閉じる） ===== */}
       {(pickerOpen || (needsClient && !clientIndustry)) && (
-      <>
+      <div className="no-print">
       {/* ===== STEP 1 業種 ===== */}
       <div className="card">
         <div className="step-head">
@@ -559,25 +670,51 @@ export default function DiagnosticV2() {
         {media && <p style={{ fontSize: 11.5, color: "var(--acc)", margin: "10px 0 0" }}>◎ {MEDIA.find((m) => m.id === media)?.note}</p>}
       </div>
 
-      </>
+      </div>
       )}
       {loading && (
-        <div className="card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="card no-print" style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 18, animation: "v2spin 1s linear infinite", display: "inline-block" }}>⟳</span>
           <span style={{ fontSize: 13.5, color: "var(--ink2)" }}>{stepMsg}</span>
         </div>
       )}
 
       {err && (
-        <div className="card" style={{ background: "#FEF3F2", borderColor: "#FDA29B" }}>
+        <div className="card no-print" style={{ background: "#FEF3F2", borderColor: "#FDA29B" }}>
           <p style={{ fontSize: 13, color: "#B42318", margin: "0 0 6px" }}>⚠ {err}</p>
           {!isOverHardLimit && <button className="btn-ghost" type="button" onClick={run}>もう一度試す</button>}
+        </div>
+      )}
+
+      {/* ===== 診断できなかったとき ===== */}
+      {failure && !(failure.kind === "limit" && isOverHardLimit) && (
+        <div className="card no-print" role="alert" style={{ background: "#FEF3F2", borderColor: "#FDA29B" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+            <span style={{ fontSize: 11, padding: "2px 9px", borderRadius: 999, background: "#FEE4E2", color: "#B42318", fontWeight: 700 }}>診断できませんでした</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#B42318" }}>{failure.label}</span>
+          </div>
+          <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 6px", lineHeight: 1.7 }}>{failure.hint}</p>
+          {failure.notConsumed && !isPro && (
+            <p style={{ fontSize: 12.5, fontWeight: 600, color: "var(--ink)", margin: "0 0 8px" }}>無料診断の回数は消費していません。</p>
+          )}
+          {failure.detail && <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 8px" }}>詳細：{failure.detail}</p>}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {canRun && failure.kind !== "refused" && <button className="btn-ghost" type="button" onClick={run}>もう一度診断</button>}
+            {failure.kind === "refused" && <a className="btn-ghost" style={{ textDecoration: "none" }} href="/consult">監修相談へ</a>}
+          </div>
         </div>
       )}
 
       {/* ===== 結果 ===== */}
       {a && (
         <div ref={resultRef}>
+          {/* PDF（印刷）にだけ出す見出し */}
+          <div className="print-only" style={{ marginBottom: 14 }}>
+            <p className="serif" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 4px" }}>薬機レーダー 診断結果</p>
+            <p style={{ fontSize: 11, color: "var(--ink2)", margin: 0 }}>
+              {resultAt ? `${formatAt(resultAt)} 診断` : ""}｜{selectedIndustry?.label || "―"}{sub ? `・${selectedIndustry?.subs.find((x) => x.id === sub)?.label || ""}` : ""} ／ {MEDIA.find((m) => m.id === media)?.label || "―"}｜{text.length.toLocaleString()}文字｜ルールブック {res.engine?.rulebook}
+            </p>
+          </div>
           {/* 判定ヘッダー */}
           <div className="card" style={{ borderColor: jStyle.bd, background: jStyle.bg }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -601,6 +738,9 @@ export default function DiagnosticV2() {
               </div>
             </div>
             <p style={{ fontSize: 13.5, lineHeight: 1.8, color: "var(--ink)", margin: "12px 0 0" }}>{a.summary}</p>
+            <div className="no-print" style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              <button type="button" className="btn-ghost" onClick={savePdf}>PDFで保存（印刷）</button>
+            </div>
           </div>
 
           {/* 原文ハイライト */}
@@ -736,7 +876,7 @@ export default function DiagnosticV2() {
 
           {/* ルール照合（折りたたみ） */}
           {res.matches?.length > 0 && (
-            <div className="card" style={{ background: "var(--paper2)" }}>
+            <div className="card no-print" style={{ background: "var(--paper2)" }}>
               <button type="button" onClick={() => setShowRules(!showRules)}
                 style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink)", width: "100%", textAlign: "left" }}>
                 {showRules ? "▼" : "▶"} ルールブック照合（{res.matchCount}件マッチ・{res.engine?.rulebook}）
@@ -757,7 +897,7 @@ export default function DiagnosticV2() {
 
           {/* LINE誘導 */}
           {isOverFreeLimit && !isOverHardLimit && (
-            <div className="card" style={{ background: "#ECFDF3", borderColor: "#75E0A7" }}>
+            <div className="card no-print" style={{ background: "#ECFDF3", borderColor: "#75E0A7" }}>
               <p style={{ fontSize: 13.5, fontWeight: 600, margin: "0 0 6px", color: "#067647" }}>LINE登録で最新の法規制アップデートを配信中</p>
               <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 10px", lineHeight: 1.7 }}>
                 無料診断は本日あと{Math.max(0, HARD_LIMIT - usageCount)}回（24時間で復活）。広告監修のご相談もLINEからどうぞ。
@@ -776,7 +916,7 @@ export default function DiagnosticV2() {
             </p>
           </div>
           {/* 有料監修の申込（診断内容から見積を確定して構造化して送る） */}
-          <div className="card" style={{ border: "2px solid var(--ink)" }}>
+          <div className="card no-print" style={{ border: "2px solid var(--ink)" }}>
             <p className="serif" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 4px" }}>この診断を、薬剤師の監修で確定させる</p>
             <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 12px", lineHeight: 1.7 }}>
               AIの一次診断は参考情報です。掲載可否の確定と修正文の納品は、薬剤師・薬機法管理者による監修で行います。
@@ -831,6 +971,61 @@ export default function DiagnosticV2() {
                 onFocus={(e) => e.target.select()}
                 style={{ width: "100%", minHeight: 180, marginTop: 8, fontSize: 12, lineHeight: 1.7, padding: 10,
                          border: "1px solid var(--line2)", borderRadius: 8, background: "var(--paper2)", color: "var(--ink)" }} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== この端末の診断履歴 ===== */}
+      {history.length > 0 && (
+        <div ref={historyRef} id="history" className="card no-print" style={{ marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>
+              この端末の診断履歴 <span style={{ fontWeight: 400, fontSize: 12, color: "var(--ink3)" }}>{history.length}件</span>
+            </p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {[["all", `すべて ${history.length}`], ["done", `診断済み ${doneCount}`], ["failed", `できなかった ${failedCount}`]].map(([k, l]) => (
+                <button key={k} type="button" className={`chip ${histTab === k ? "on" : ""}`} style={{ fontSize: 11.5, padding: "4px 11px" }} onClick={() => setHistTab(k)}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "0 0 6px", lineHeight: 1.6 }}>
+            原稿と結果は、このブラウザにだけ保存されます（当方のサーバーには送りません）。ほかの端末とは共有されません。最大50件です。
+          </p>
+          {shownHistory.length === 0 && <p style={{ fontSize: 12.5, color: "var(--ink3)", margin: "8px 0" }}>該当する履歴はありません。</p>}
+          {shownHistory.map((e) => {
+            const done = e.status === "done";
+            const js = done ? (JUDGMENT_STYLE[e.result.analysis.final_judgment] || JUDGMENT_STYLE["要修正"]) : null;
+            return (
+              <div key={e.id} style={{ padding: "10px 0", borderTop: "1px solid var(--line)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "var(--ink3)" }}>{formatAt(e.at)}</span>
+                  {done
+                    ? <span style={{ fontSize: 11, padding: "2px 9px", borderRadius: 999, background: js.bg, color: js.c, border: `1px solid ${js.bd}`, fontWeight: 700 }}>{e.result.analysis.final_judgment}</span>
+                    : <span style={{ fontSize: 11, padding: "2px 9px", borderRadius: 999, background: "#FEE4E2", color: "#B42318", fontWeight: 700 }}>診断できなかった</span>}
+                  <span style={{ fontSize: 12.5, color: "var(--ink2)" }}>{contextLabel(e)}</span>
+                  <span style={{ fontSize: 11.5, color: "var(--ink3)" }}>{(e.length ?? e.text.length).toLocaleString()}文字</span>
+                </div>
+                <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "4px 0 6px", lineHeight: 1.6 }}>
+                  {snippet(e.text)}{!done ? `　― ${e.failure.label}` : ""}
+                </p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {done && <button type="button" className="btn-ghost" onClick={() => restoreEntry(e, true)}>結果を見る</button>}
+                  <button type="button" className="btn-ghost" onClick={() => restoreEntry(e, false)}>入力欄に戻す</button>
+                  <button type="button" className="btn-ghost" onClick={() => deleteEntry(e.id)}>削除</button>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+            {confirmClear ? (
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ fontSize: 12.5, color: "#B42318" }}>履歴{history.length}件をすべて削除します。元に戻せません。</span>
+                <button type="button" className="btn-ghost" style={{ borderColor: "#FDA29B", color: "#B42318" }} onClick={clearAllHistory}>削除する</button>
+                <button type="button" className="btn-ghost" onClick={() => setConfirmClear(false)}>やめる</button>
+              </div>
+            ) : (
+              <button type="button" className="btn-ghost" onClick={() => setConfirmClear(true)}>履歴をすべて削除</button>
             )}
           </div>
         </div>
