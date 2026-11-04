@@ -1,0 +1,659 @@
+<title>一文字大筆</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yuji+Boku&family=Yuji+Syuku&family=Potta+One&family=Zen+Antique&family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: sticky washi sheet on the left as the hero, a single control column on the right.
+   Palette is a deep green-slate floor (the sheet is the only bright object), vermilion used only for the seal-like primary action. */
+:root {
+  --bg: #151c1a;
+  --panel: #1c2523;
+  --panel-2: #243230;
+  --line: #31403d;
+  --fg: #ece6d6;
+  --muted: #9aa69f;
+  --shu: #d2412f;
+  --shu-fg: #fff7ee;
+  --focus: #f0c987;
+  --f-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+  --f-brush: "Yuji Boku", "Hiragino Mincho ProN", serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.7;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px; }
+header { display: flex; align-items: baseline; gap: 16px 24px; flex-wrap: wrap; }
+h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 34px; letter-spacing: .12em; line-height: 1.2; }
+header p { margin: 0; color: var(--muted); font-size: 14px; }
+
+.app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 32px; align-items: start; }
+.stage { position: sticky; top: 16px; display: grid; gap: 14px; min-width: 0; }
+.floor {
+  background: #0f1513;
+  border: 1px solid var(--line);
+  padding: clamp(14px, 3vw, 30px);
+  display: grid; place-items: center;
+}
+.sheet {
+  width: min(100%, 560px);
+  aspect-ratio: 5 / 6;
+  background-color: #e9e3d3;
+  box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.6);
+  position: relative;
+  max-width: 100%;
+}
+.sheet.clear {
+  background-image: linear-gradient(45deg, #cfd2cc 25%, transparent 25%, transparent 75%, #cfd2cc 75%),
+                    linear-gradient(45deg, #cfd2cc 25%, transparent 25%, transparent 75%, #cfd2cc 75%);
+  background-size: 20px 20px; background-position: 0 0, 10px 10px; background-color: #f1f3ee;
+}
+canvas#view { display: block; width: 100%; height: 100%; }
+.busy {
+  position: absolute; inset: auto 10px 10px auto; background: rgba(21,28,26,.88); color: var(--fg);
+  font-size: 12px; padding: 3px 10px; opacity: 0; transition: opacity .15s;
+}
+.busy.on { opacity: 1; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.meta { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; margin-left: auto; }
+
+button, select, input[type="text"] { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.btn {
+  background: transparent; border: 1px solid var(--line); padding: 8px 16px; min-height: 40px;
+  color: var(--fg);
+}
+.btn:hover { background: var(--panel-2); }
+.btn.primary { background: var(--shu); border-color: var(--shu); color: var(--shu-fg); font-weight: 700; }
+.btn.primary:hover { filter: brightness(1.08); background: var(--shu); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.sec { padding: 18px 20px; border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+.sec:first-child { border-top: 0; }
+.sec h2 { margin: 0; font-family: var(--f-display); font-size: 16px; font-weight: 800; letter-spacing: .14em; }
+.sec h2 small { font-family: var(--f-body); font-weight: 400; color: var(--muted); letter-spacing: 0; font-size: 12px; margin-left: 8px; }
+
+.textrow { display: flex; gap: 10px; min-width: 0; }
+#txt {
+  flex: 1; width: 0; min-width: 0; height: 64px; background: var(--bg); border: 1px solid var(--line);
+  font-family: var(--f-brush); font-size: 40px; text-align: center; padding: 0 8px; letter-spacing: .1em;
+}
+.hint { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+.years { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+.year {
+  background: var(--bg); border: 1px solid var(--line); padding: 3px 0 2px; display: grid; justify-items: center; line-height: 1.15;
+}
+.year span { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.year b { font-family: var(--f-brush); font-weight: 400; font-size: 24px; }
+.year:hover { border-color: var(--muted); }
+.year[aria-pressed="true"] { border-color: var(--shu); background: #2a1f1d; }
+
+.seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; }
+.seg button { background: var(--bg); border: 1px solid var(--line); padding: 6px 4px; min-height: 52px; display: grid; justify-items: center; line-height: 1.2; }
+.seg button i { font-style: normal; font-size: 24px; }
+.seg button em { font-style: normal; font-size: 11px; color: var(--muted); }
+.seg button[aria-pressed="true"] { border-color: var(--shu); background: #2a1f1d; }
+.seg.text button { min-height: 40px; font-size: 13px; }
+
+.row { display: grid; grid-template-columns: 92px minmax(0, 1fr) 46px; align-items: center; gap: 10px; font-size: 13px; }
+.row output { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+input[type="range"] { width: 100%; accent-color: var(--shu); margin: 0; min-height: 24px; }
+
+.field { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 13px; }
+.field input[type="text"], select {
+  background: var(--bg); border: 1px solid var(--line); height: 38px; padding: 0 10px; min-width: 0; width: 100%;
+}
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.check input { width: 18px; height: 18px; accent-color: var(--shu); }
+
+footer { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 70ch; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .stage { position: static; }
+  h1 { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) { .busy { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>一文字大筆</h1>
+    <p>好きな漢字を、一年の締めくくりに書き上げる大筆の趣で。</p>
+  </header>
+
+  <div class="app">
+    <section class="stage" aria-label="プレビュー">
+      <div class="floor">
+        <div class="sheet" id="sheet">
+          <canvas id="view" width="1000" height="1200" role="img" aria-label="書き上がった一文字"></canvas>
+          <div class="busy" id="busy" role="status">書いています…</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="save">PNGで保存</button>
+        <button class="btn" id="saveHi">高精細で保存（2000×2400）</button>
+        <span class="meta" id="meta"></span>
+      </div>
+      <p class="hint" id="saveNote" hidden></p>
+    </section>
+
+    <div class="panel">
+      <div class="sec">
+        <h2>文字<small>1〜3字（縦に並びます）</small></h2>
+        <div class="textrow">
+          <input type="text" id="txt" value="熊" maxlength="3" autocomplete="off" aria-label="書きたい漢字">
+          <button class="btn" id="redo" title="同じ文字を、筆の運びを変えてもう一度書きます">書き直す</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>歴代の一文字<small>1995–2025</small></h2>
+        <div class="years" id="years"></div>
+        <p class="hint">字は各年に発表された漢字です。筆致は年ごとに勢いを変えた書き方で、実際の揮毫の再現ではありません。</p>
+      </div>
+
+      <div class="sec">
+        <h2>筆</h2>
+        <div class="seg" id="fonts"></div>
+        <div id="sliders" style="display:grid;gap:10px"></div>
+      </div>
+
+      <div class="sec">
+        <h2>紙</h2>
+        <div class="seg text" id="papers"></div>
+      </div>
+
+      <div class="sec">
+        <h2>落款</h2>
+        <label class="check"><input type="checkbox" id="sigOn" checked> 署名と印を入れる</label>
+        <label class="field">署名 <input type="text" id="sig" maxlength="14" autocomplete="off"></label>
+        <label class="field">印 <input type="text" id="seal" maxlength="4" autocomplete="off"></label>
+        <label class="field">印の型
+          <select id="sealStyle">
+            <option value="white">白文（朱地に白抜き）</option>
+            <option value="red">朱文（白地に朱の字）</option>
+          </select>
+        </label>
+        <p class="hint">署名と印は自由に入れ替えられます。実在の人物や寺社の名前・印影は使わないでください。</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    「今年の漢字®」は公益財団法人日本漢字能力検定協会の登録商標です。このサービスは同協会および清水寺とは関係がなく、公式の揮毫・発表を示すものではありません。
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- データ ---------- */
+  const YEARS = [[1995,'震'],[1996,'食'],[1997,'倒'],[1998,'毒'],[1999,'末'],[2000,'金'],[2001,'戦'],[2002,'帰'],[2003,'虎'],[2004,'災'],[2005,'愛'],[2006,'命'],[2007,'偽'],[2008,'変'],[2009,'新'],[2010,'暑'],[2011,'絆'],[2012,'金'],[2013,'輪'],[2014,'税'],[2015,'安'],[2016,'金'],[2017,'北'],[2018,'災'],[2019,'令'],[2020,'密'],[2021,'金'],[2022,'戦'],[2023,'税'],[2024,'金'],[2025,'熊']];
+  const FONTS = {
+    boku:   { css: '"Yuji Boku"',   fam: 'Yuji Boku',   label: '墨',   sub: '太筆' },
+    syuku:  { css: '"Yuji Syuku"',  fam: 'Yuji Syuku',  label: '粛',   sub: '端正' },
+    potta:  { css: '"Potta One"',   fam: 'Potta One',   label: '剛',   sub: '極太' },
+    antique:{ css: '"Zen Antique"', fam: 'Zen Antique', label: '古',   sub: '重厚' }
+  };
+  const PAPERS = [
+    { id: 'nama',  label: '生成り', base: [236, 226, 204] },
+    { id: 'shiro', label: '白和紙', base: [244, 241, 233] },
+    { id: 'usu',   label: '薄墨紙', base: [217, 215, 206] },
+    { id: 'clear', label: '透過PNG' }
+  ];
+  const SLIDERS = [
+    { k: 'weight',  label: '筆の太さ',   min: 0,   max: 1,    step: .01, fmt: v => Math.round(v * 100) },
+    { k: 'density', label: '墨の濃さ',   min: .4,  max: 1.1,  step: .01, fmt: v => Math.round((v - .4) / .7 * 100) },
+    { k: 'kasure',  label: 'かすれ',     min: 0,   max: 1,    step: .01, fmt: v => Math.round(v * 100) },
+    { k: 'bleed',   label: 'にじみ',     min: 0,   max: 1,    step: .01, fmt: v => Math.round(v * 100) },
+    { k: 'rough',   label: '縁のあらさ', min: 0,   max: 1,    step: .01, fmt: v => Math.round(v * 100) },
+    { k: 'wobble',  label: '筆のゆらぎ', min: 0,   max: 14,   step: .5,  fmt: v => Math.round(v / 14 * 100) },
+    { k: 'tilt',    label: '傾き',       min: -8,  max: 8,    step: .1,  fmt: v => v.toFixed(1) + '°' },
+    { k: 'size',    label: '大きさ',     min: .6,  max: 1.15, step: .01, fmt: v => Math.round(v * 100) + '%' }
+  ];
+
+  const KAN = '〇一二三四五六七八九';
+  function kansuji(n) {
+    if (n === 1) return '元';
+    if (n < 10) return KAN[n];
+    if (n === 10) return '十';
+    if (n < 20) return '十' + KAN[n - 10];
+    const t = Math.floor(n / 10), o = n % 10;
+    return KAN[t] + '十' + (o ? KAN[o] : '');
+  }
+  function eraText(y) { return y >= 2019 ? '令和' + kansuji(y - 2018) + '年' : '平成' + kansuji(y - 1988) + '年'; }
+
+  const st = {
+    text: '熊', year: 2025, seed: 2025, font: 'boku',
+    weight: .3, density: .92, kasure: .55, bleed: .45, rough: .5, wobble: 6, tilt: -1.5, size: 1,
+    paper: 'nama', sigOn: true, sig: eraText(2025) + ' 書', seal: '一筆', sealStyle: 'white'
+  };
+
+  /* ---------- 乱数・ノイズ ---------- */
+  function makeRng(seed) {
+    let a = seed >>> 0;
+    return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  function makeNoise(seed) {
+    const r = makeRng(seed), T = new Float32Array(512 * 512);
+    for (let i = 0; i < T.length; i++) T[i] = r();
+    return (x, y) => {
+      const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi;
+      const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+      const x0 = xi & 511, x1 = (xi + 1) & 511, y0 = (yi & 511) << 9, y1 = ((yi + 1) & 511) << 9;
+      const a = T[y0 | x0], b = T[y0 | x1], c = T[y1 | x0], d = T[y1 | x1];
+      return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+    };
+  }
+
+  /* ---------- ぼかし・補間 ---------- */
+  function boxH(s, d, W, H, r) {
+    const inv = 1 / (2 * r + 1);
+    for (let y = 0; y < H; y++) {
+      const o = y * W; let sum = 0;
+      for (let k = -r; k <= r; k++) sum += s[o + (k < 0 ? 0 : k >= W ? W - 1 : k)];
+      for (let x = 0; x < W; x++) {
+        d[o + x] = sum * inv;
+        const add = x + r + 1, rem = x - r;
+        sum += s[o + (add >= W ? W - 1 : add)] - s[o + (rem < 0 ? 0 : rem)];
+      }
+    }
+  }
+  function boxV(s, d, W, H, r) {
+    const inv = 1 / (2 * r + 1);
+    for (let x = 0; x < W; x++) {
+      let sum = 0;
+      for (let k = -r; k <= r; k++) sum += s[(k < 0 ? 0 : k >= H ? H - 1 : k) * W + x];
+      for (let y = 0; y < H; y++) {
+        d[y * W + x] = sum * inv;
+        const add = y + r + 1, rem = y - r;
+        sum += s[(add >= H ? H - 1 : add) * W + x] - s[(rem < 0 ? 0 : rem) * W + x];
+      }
+    }
+  }
+  function blurG(src, W, H, r) {
+    let a = Float32Array.from(src);
+    if (r < 1) return a;
+    let b = new Float32Array(src.length);
+    for (let k = 0; k < 3; k++) { boxH(a, b, W, H, r); boxV(b, a, W, H, r); }
+    return a;
+  }
+  function bil(F, W, H, x, y) {
+    if (x < 0) x = 0; else if (x > W - 1.001) x = W - 1.001;
+    if (y < 0) y = 0; else if (y > H - 1.001) y = H - 1.001;
+    const xi = x | 0, yi = y | 0, fx = x - xi, fy = y - yi, i = yi * W + xi;
+    return F[i] * (1 - fx) * (1 - fy) + F[i + 1] * fx * (1 - fy) + F[i + W] * (1 - fx) * fy + F[i + W + 1] * fx * fy;
+  }
+  const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+  const sstep = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+
+  /* ---------- 墨のレイヤー（マスク → 墨の濃度） ---------- */
+  function inkLayer(m, W, H, s, p, vn) {
+    const n = W * H;
+    const B1 = blurG(m, W, H, Math.max(1, Math.round(p.r1 * s)));
+    const Bt = blurG(m, W, H, Math.max(1, Math.round(p.rt * s)));
+    const Bb = blurG(m, W, H, Math.max(1, Math.round(p.rb * s)));
+    const A = new Float32Array(n), Dn = new Float32Array(n);
+    const gs = Math.max(1, Math.round(p.rt * .5 * s));
+    const wob = p.wobble * s, rgh = p.rough;
+    for (let y = 0; y < H; y++) {
+      const ys = y / s;
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x, bb = Bb[i];
+        if (bb < .004) continue;
+        const xs = x / s;
+        // 筆のゆらぎ（ゆっくりした歪み）と縁のあらさ（細かい歪み）
+        const dx = (vn(xs / 150 + 3.1, ys / 150 + 9.7) - .5) * 2 * wob + (vn(xs / 7 + 1.3, ys / 7 + 4.1) - .5) * rgh * 3.2 * s;
+        const dy = (vn(xs / 150 + 21.7, ys / 150 + 5.2) - .5) * 2 * wob + (vn(xs / 7 + 8.9, ys / 7 + 2.6) - .5) * rgh * 3.2 * s;
+        const b1 = bil(B1, W, H, x + dx, y + dy);
+        const t = .5 + (vn(xs / 17 + 40, ys / 17 + 12) - .5) * rgh * .7;
+        const aBase = sstep(t - .1, t + .1, b1);
+        let a = aBase;
+        const depth = clamp01((b1 - .5) * 2.2);
+        if (a > .003 && p.kasure > .01) {
+          const xa = x - gs < 0 ? 0 : x - gs, xb = x + gs >= W ? W - 1 : x + gs;
+          const ya = y - gs < 0 ? 0 : y - gs, yb = y + gs >= H ? H - 1 : y + gs;
+          const gx = Math.abs(Bt[y * W + xb] - Bt[y * W + xa]), gy = Math.abs(Bt[yb * W + x] - Bt[ya * W + x]);
+          const gm = gx + gy, wh = gm < 1e-3 ? .5 : sstep(.42, .58, gy / gm);     // 1 = 横画、0 = 縦画
+          const sh = vn(xs / 70, ys / 2 + 31) * .6 + vn(xs / 23 + 7, ys / .9 + 3) * .4;
+          const sv = vn(xs / 2 + 51, ys / 70) * .6 + vn(xs / .9 + 9, ys / 23 + 5) * .4;
+          const g = clamp01(((sv + (sh - sv) * wh) - .5) * 2 + .5);
+          const dz = sstep(.36, .7, vn(xs / 210 + 13, ys / 210 + 2) * .7 + vn(xs / 60 + 5, ys / 60 + 17) * .3);
+          const dry = p.kasure * (.22 + .78 * dz) * (.1 + .9 * (1 - depth) * (1 - depth));
+          const thr = 1 - dry * .62;
+          a *= 1 - sstep(thr - .07, thr + .07, g) * .94;
+        }
+        let dn = p.density * (.84 + .16 * depth) + p.rim * (1 - depth) * .12 + (vn(xs / 110 + 70, ys / 110 + 33) - .5) * p.tone;
+        if (p.bleed > .01 && aBase < .98) {
+          const h = sstep(.05, .45, bb) * (1 - aBase) * p.bleed * .24 * (.55 + .9 * vn(xs / 6 + 90, ys / 6 + 14));
+          if (h > a) { a = h; dn = .45; }
+        }
+        A[i] = a > 1 ? 1 : a; Dn[i] = dn;
+      }
+    }
+    return { A, Dn };
+  }
+
+  function blend(out, A, Dn, pal, transparent) {
+    const d = out.data, n = A.length, L = pal.l, D = pal.d;
+    for (let i = 0; i < n; i++) {
+      const a = A[i];
+      if (a < .004) continue;
+      const dn = clamp01(Dn[i]);
+      const r = L[0] + (D[0] - L[0]) * dn, g = L[1] + (D[1] - L[1]) * dn, b = L[2] + (D[2] - L[2]) * dn;
+      const p = i * 4;
+      if (!transparent) {
+        d[p]     = d[p]     * (1 - a * (1 - r / 255));
+        d[p + 1] = d[p + 1] * (1 - a * (1 - g / 255));
+        d[p + 2] = d[p + 2] * (1 - a * (1 - b / 255));
+      } else {
+        const a0 = d[p + 3] / 255, ra = a + a0 * (1 - a);
+        d[p]     = (r * a + d[p]     * a0 * (1 - a)) / ra;
+        d[p + 1] = (g * a + d[p + 1] * a0 * (1 - a)) / ra;
+        d[p + 2] = (b * a + d[p + 2] * a0 * (1 - a)) / ra;
+        d[p + 3] = ra * 255;
+      }
+    }
+  }
+
+  /* ---------- 和紙 ---------- */
+  function paintPaper(out, W, H, s, base, vn, rng) {
+    const fc = document.createElement('canvas'); fc.width = W; fc.height = H;
+    const g = fc.getContext('2d', { willReadFrequently: true });
+    g.fillStyle = 'rgb(128,128,128)'; g.fillRect(0, 0, W, H); g.lineCap = 'round';
+    for (let i = 0; i < 4800; i++) {
+      const x = rng() * W, y = rng() * H, L = (14 + rng() * 70) * s, ang = rng() * Math.PI * 2, bend = (rng() - .5) * L * .6;
+      g.strokeStyle = rng() < .55 ? `rgba(255,255,255,${.05 + rng() * .12})` : `rgba(70,48,22,${.03 + rng() * .07})`;
+      g.lineWidth = (.5 + rng() * .9) * s;
+      g.beginPath(); g.moveTo(x, y);
+      g.quadraticCurveTo(x + Math.cos(ang) * L / 2 - Math.sin(ang) * bend, y + Math.sin(ang) * L / 2 + Math.cos(ang) * bend, x + Math.cos(ang) * L, y + Math.sin(ang) * L);
+      g.stroke();
+    }
+    const fd = g.getImageData(0, 0, W, H).data, d = out.data;
+    for (let y = 0; y < H; y++) {
+      const ys = y / s, vy = (y / H - .5) * 2;
+      for (let x = 0; x < W; x++) {
+        const p = (y * W + x) * 4, xs = x / s, vx = (x / W - .5) * 2;
+        const f = (fd[p] - 128) / 128;
+        const rr = Math.max(Math.abs(vx), Math.abs(vy));
+        const tone = 1 + f * .55 + (vn(xs / 260 + 2, ys / 260 + 8) - .5) * .09 + (vn(xs / 3, ys / 3) - .5) * .035 - .09 * rr * rr * rr;
+        d[p] = Math.min(255, base[0] * tone); d[p + 1] = Math.min(255, base[1] * tone); d[p + 2] = Math.min(255, base[2] * tone); d[p + 3] = 255;
+      }
+    }
+  }
+
+  /* ---------- マスク描画 ---------- */
+  const textOf = () => [...st.text.replace(/\s/g, '')].slice(0, 3);
+
+  function drawGlyphs(mx, W, H, s, rng) {
+    const chars = textOf(); if (!chars.length) return false;
+    const n = chars.length, f = FONTS[st.font], ref = 400;
+    mx.clearRect(0, 0, W, H);
+    mx.fillStyle = '#000'; mx.strokeStyle = '#000'; mx.lineJoin = 'round'; mx.textBaseline = 'alphabetic'; mx.textAlign = 'left';
+    mx.font = `${ref}px ${f.css}, serif`;
+    const ms = chars.map(c => mx.measureText(c));
+    const lw0 = st.weight * .08 * ref;
+    const bw = Math.max(...ms.map(m => m.actualBoundingBoxLeft + m.actualBoundingBoxRight)) + lw0;
+    const bh = Math.max(...ms.map(m => m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)) + lw0;
+    const gap = .06, boxW = W * .66 * st.size, boxH = H * .70 * st.size;
+    const k = Math.min(boxW / bw, (boxH / (n + (n - 1) * gap)) / bh);
+    const cx = W * .55, cy = H * .45, pitch = bh * k * (1 + gap);
+    chars.forEach((c, i) => {
+      const yc = cy + (i - (n - 1) / 2) * pitch;
+      mx.save();
+      mx.translate(cx + (rng() - .5) * W * .012, yc);
+      mx.rotate((st.tilt + (rng() - .5) * 1.2) * Math.PI / 180);
+      mx.font = `${ref * k}px ${f.css}, serif`;
+      const m = mx.measureText(c);
+      const ox = -(m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2, oy = (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+      mx.fillText(c, ox, oy);
+      if (lw0 > 0) { mx.lineWidth = lw0 * k; mx.strokeText(c, ox, oy); }
+      mx.restore();
+    });
+    return true;
+  }
+
+  function drawSig(mx, W, H) {
+    const text = st.sig.trim();
+    mx.clearRect(0, 0, W, H);
+    if (!st.sigOn || !text) return null;
+    const size = H * .030, pitch = size * 1.1, sx = W * .095;
+    mx.fillStyle = '#000'; mx.strokeStyle = '#000'; mx.lineJoin = 'round'; mx.textBaseline = 'alphabetic'; mx.textAlign = 'left';
+    mx.font = `${size}px "Yuji Syuku", serif`;
+    let y = H * .60;
+    for (const ch of text) {
+      if (/\s/.test(ch)) { y += pitch * .5; continue; }
+      const m = mx.measureText(ch);
+      mx.fillText(ch, sx - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2, y + size / 2 + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2);
+      mx.lineWidth = size * .035; mx.strokeText(ch, sx - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2, y + size / 2 + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2);
+      y += pitch;
+    }
+    return { sx, endY: y };
+  }
+
+  function drawSeal(mx, W, H, sig) {
+    const chars = [...st.seal.replace(/\s/g, '')].slice(0, 4);
+    mx.clearRect(0, 0, W, H);
+    if (!st.sigOn || !chars.length) return false;
+    const sz = W * .068, cx = sig ? sig.sx : W * .095;
+    let cy = (sig ? sig.endY : H * .80) + sz * .75;
+    cy = Math.min(cy, H * .965 - sz / 2);
+    const x0 = cx - sz / 2, y0 = cy - sz / 2;
+    mx.textBaseline = 'alphabetic'; mx.textAlign = 'left';
+    const n = chars.length, cols = n <= 2 ? 1 : 2, rows = n === 1 ? 1 : 2;
+    const fs = n === 1 ? sz * .78 : n === 2 ? sz * .46 : sz * .43;
+    const pad = sz * .08, cw = (sz - pad * 2) / cols, ch = (sz - pad * 2) / rows;
+    const pos = i => (n <= 2) ? [0, i] : [i < 2 ? 1 : 0, i % 2];   // 右の列から、上→下
+    const glyphs = () => {
+      mx.font = `${fs}px "Zen Antique", serif`;
+      chars.forEach((c, i) => {
+        const [col, row] = pos(i), m = mx.measureText(c);
+        const px = x0 + pad + col * cw + cw / 2 - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
+        const py = y0 + pad + row * ch + ch / 2 + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+        mx.fillText(c, px, py); mx.lineWidth = fs * .05; mx.strokeText(c, px, py);
+      });
+    };
+    mx.fillStyle = '#000'; mx.strokeStyle = '#000'; mx.lineJoin = 'round';
+    if (st.sealStyle === 'white') {
+      mx.fillRect(x0, y0, sz, sz);
+      mx.globalCompositeOperation = 'destination-out'; glyphs(); mx.globalCompositeOperation = 'source-over';
+    } else {
+      mx.lineWidth = sz * .07; mx.strokeRect(x0 + sz * .035, y0 + sz * .035, sz - sz * .07, sz - sz * .07);
+      glyphs();
+    }
+    return true;
+  }
+
+  const readMask = (mx, W, H) => {
+    const d = mx.getImageData(0, 0, W, H).data, m = new Float32Array(W * H);
+    for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] / 255;
+    return m;
+  };
+
+  /* ---------- 描画本体 ---------- */
+  const tick = () => new Promise(r => setTimeout(r, 16));
+  async function ensureFonts() {
+    const jobs = [];
+    const f = FONTS[st.font];
+    jobs.push(document.fonts.load(`100px ${f.css}`, st.text));
+    jobs.push(document.fonts.load('100px "Yuji Syuku"', st.sig));
+    jobs.push(document.fonts.load('100px "Zen Antique"', st.seal));
+    try { await Promise.race([Promise.all(jobs), new Promise(r => setTimeout(r, 6000))]); } catch (e) { /* 代替フォントで続行 */ }
+  }
+
+  async function paint(canvas, s) {
+    const W = Math.round(1000 * s), H = Math.round(1200 * s);
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const rng = makeRng(st.seed * 977 + 13), vn = makeNoise(st.seed * 31 + 7);
+    const transparent = st.paper === 'clear';
+    const out = ctx.createImageData(W, H);
+    await ensureFonts();
+    if (!transparent) paintPaper(out, W, H, s, PAPERS.find(p => p.id === st.paper).base, vn, rng);
+    await tick();
+
+    const mc = document.createElement('canvas'); mc.width = W; mc.height = H;
+    const mx = mc.getContext('2d', { willReadFrequently: true });
+    const inkPal = { l: [96, 86, 78], d: [14, 12, 13] };
+    const redPal = { l: [214, 96, 80], d: [172, 34, 30] };
+
+    if (drawGlyphs(mx, W, H, s, rng)) {
+      const L = inkLayer(readMask(mx, W, H), W, H, s,
+        { r1: 5, rt: 12, rb: 9, rough: st.rough, wobble: st.wobble, kasure: st.kasure, bleed: st.bleed, density: st.density, rim: 1, tone: .3 }, vn);
+      blend(out, L.A, L.Dn, inkPal, transparent);
+    }
+    await tick();
+    const sig = drawSig(mx, W, H);
+    if (sig) {
+      const L = inkLayer(readMask(mx, W, H), W, H, s,
+        { r1: 1.2, rt: 3, rb: 4, rough: st.rough * .5, wobble: st.wobble * .08, kasure: st.kasure * .3, bleed: st.bleed * .35, density: Math.min(1, st.density + .05), rim: .5, tone: .2 }, vn);
+      blend(out, L.A, L.Dn, inkPal, transparent);
+    }
+    await tick();
+    if (drawSeal(mx, W, H, sig)) {
+      const L = inkLayer(readMask(mx, W, H), W, H, s,
+        { r1: 1, rt: 3, rb: 3, rough: .7, wobble: 0, kasure: .12, bleed: .08, density: .8, rim: .4, tone: .6 }, vn);
+      blend(out, L.A, L.Dn, redPal, transparent);
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+
+  /* ---------- UI ---------- */
+  const $ = id => document.getElementById(id);
+  const view = $('view'), sheet = $('sheet'), busyEl = $('busy'), meta = $('meta');
+  let busy = false, dirty = false, timer = null;
+
+  function schedule(ms = 140) { clearTimeout(timer); busyEl.classList.add('on'); timer = setTimeout(run, ms); }
+  async function run() {
+    if (busy) { dirty = true; return; }
+    busy = true;
+    try {
+      do { dirty = false; await paint(view, 1); } while (dirty);
+      meta.textContent = `${view.width}×${view.height}px ・ 筆の運び No.${st.seed % 10000}`;
+    } catch (e) { meta.textContent = '描画に失敗しました。文字や設定を変えて再度お試しください。'; console.error(e); }
+    busy = false; busyEl.classList.remove('on');
+  }
+
+  function buildControls() {
+    const yg = $('years');
+    YEARS.forEach(([y, c]) => {
+      const b = document.createElement('button');
+      b.className = 'year'; b.type = 'button'; b.dataset.y = y; b.setAttribute('aria-pressed', 'false'); b.title = `${y}年 ${c}`;
+      b.innerHTML = `<span>${String(y).slice(2) === '00' ? y : "’" + String(y).slice(2)}</span><b>${c}</b>`;
+      b.addEventListener('click', () => applyYear(y, c));
+      yg.appendChild(b);
+    });
+    const fg = $('fonts');
+    Object.entries(FONTS).forEach(([id, f]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.f = id; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = `<i style="font-family:${f.css},serif">${f.label}</i><em>${f.sub}</em>`;
+      b.addEventListener('click', () => { st.font = id; syncUI(); schedule(30); });
+      fg.appendChild(b);
+    });
+    const sl = $('sliders');
+    SLIDERS.forEach(c => {
+      const row = document.createElement('div'); row.className = 'row';
+      row.innerHTML = `<label for="s_${c.k}">${c.label}</label><input type="range" id="s_${c.k}" min="${c.min}" max="${c.max}" step="${c.step}"><output id="o_${c.k}"></output>`;
+      sl.appendChild(row);
+      row.querySelector('input').addEventListener('input', e => { st[c.k] = parseFloat(e.target.value); $('o_' + c.k).textContent = c.fmt(st[c.k]); schedule(); });
+    });
+    const pg = $('papers');
+    PAPERS.forEach(p => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.p = p.id; b.textContent = p.label; b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => { st.paper = p.id; syncUI(); schedule(30); });
+      pg.appendChild(b);
+    });
+  }
+
+  function syncUI() {
+    $('txt').value = st.text;
+    document.querySelectorAll('.year').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.y === st.year && YEARS.find(([y]) => y === st.year)[1] === st.text)));
+    document.querySelectorAll('#fonts button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === st.font)));
+    document.querySelectorAll('#papers button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === st.paper)));
+    SLIDERS.forEach(c => { $('s_' + c.k).value = st[c.k]; $('o_' + c.k).textContent = c.fmt(st[c.k]); });
+    $('sigOn').checked = st.sigOn; $('sig').value = st.sig; $('seal').value = st.seal; $('sealStyle').value = st.sealStyle;
+    sheet.classList.toggle('clear', st.paper === 'clear');
+  }
+
+  // 年ごとに筆の勢いを変える（実際の揮毫の再現ではない）
+  function applyYear(y, c) {
+    const r = makeRng(y * 7919 + 11), pick = () => r();
+    const f = pick();
+    st.year = y; st.text = c; st.seed = y;
+    st.font = f < .5 ? 'boku' : f < .72 ? 'potta' : f < .9 ? 'syuku' : 'antique';
+    st.weight = st.font === 'potta' ? .08 + pick() * .12 : .15 + pick() * .35;
+    st.kasure = .25 + pick() * .6;
+    st.bleed = .2 + pick() * .55;
+    st.rough = .35 + pick() * .45;
+    st.wobble = 3 + pick() * 9;
+    st.tilt = (pick() - .5) * 5;
+    st.density = .82 + pick() * .22;
+    st.sig = eraText(y) + ' 書';
+    syncUI(); schedule(30);
+  }
+
+  function bindFields() {
+    $('txt').addEventListener('input', e => {
+      st.text = e.target.value;
+      document.querySelectorAll('.year').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      schedule(250);
+    });
+    $('redo').addEventListener('click', () => { st.seed = (Math.random() * 1e9) | 0; schedule(20); });
+    $('sigOn').addEventListener('change', e => { st.sigOn = e.target.checked; schedule(60); });
+    $('sig').addEventListener('input', e => { st.sig = e.target.value; schedule(300); });
+    $('seal').addEventListener('input', e => { st.seal = e.target.value; schedule(300); });
+    $('sealStyle').addEventListener('change', e => { st.sealStyle = e.target.value; schedule(60); });
+  }
+
+  /* ---------- 保存 ---------- */
+  async function saveBlob(blob, name) {
+    const note = $('saveNote');
+    let dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    if (dl) {
+      try { await dl.save({ filename: name, data: blob }); note.hidden = true; }
+      catch (e) { if (e && e.code !== 'declined') { note.hidden = false; note.textContent = 'この画面では保存できませんでした。画像を長押し、または右クリックで保存してください。'; } }
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  const toBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
+  const fileName = () => `一文字_${textOf().join('') || '無題'}.png`;
+
+  $('save').addEventListener('click', async () => {
+    if (busy) return;
+    await saveBlob(await toBlob(view), fileName());
+  });
+  $('saveHi').addEventListener('click', async () => {
+    if (busy) return;
+    busy = true; busyEl.textContent = '高精細で書いています…'; busyEl.classList.add('on');
+    try {
+      const hi = document.createElement('canvas');
+      await paint(hi, 2);
+      busyEl.classList.remove('on');
+      await saveBlob(await toBlob(hi), fileName().replace('.png', '_2x.png'));
+    } catch (e) { $('saveNote').hidden = false; $('saveNote').textContent = '高精細の書き出しに失敗しました。端末のメモリが足りない可能性があります。通常サイズでお試しください。'; }
+    busyEl.textContent = '書いています…'; busyEl.classList.remove('on'); busy = false;
+  });
+
+  buildControls(); bindFields(); syncUI(); schedule(0);
+})();
+</script>
