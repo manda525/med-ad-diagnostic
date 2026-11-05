@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yuji+Boku&family=Yuji+Syuku&family=Potta+One&family=Zen+Antique&family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yuji+Boku&family=Yuji+Syuku&family=Zen+Antique&family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
 /* Layout: sticky washi sheet on the left as the hero, a single control column on the right.
    Palette is a deep green-slate floor (the sheet is the only bright object), vermilion used only for the seal-like primary action. */
@@ -152,43 +152,20 @@ footer { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 70ch
 
     <div class="panel">
       <div class="sec">
-        <h2>文字<small>1〜3字（縦に並びます）</small></h2>
+        <h2>書きたい文字<small>1〜3字（縦に並びます）</small></h2>
         <div class="textrow">
           <input type="text" id="txt" value="熊" maxlength="3" autocomplete="off" aria-label="書きたい漢字">
           <button class="btn" id="redo" title="同じ文字を、筆の運びを変えてもう一度書きます">書き直す</button>
         </div>
+        <label class="check"><input type="checkbox" id="clearBg"> 背景を透明にする（グッズ向けPNG）</label>
       </div>
 
       <div class="sec">
         <h2>歴代の一文字<small>1995–2025</small></h2>
         <div class="years" id="years"></div>
-        <p class="hint">字は各年に発表された漢字です。筆致は年ごとに勢いを変えた書き方で、実際の揮毫の再現ではありません。</p>
+        <p class="hint">字は各年に発表された漢字です。書き方は共通で、実際の揮毫の再現ではありません。</p>
       </div>
 
-      <div class="sec">
-        <h2>筆</h2>
-        <div class="seg" id="fonts"></div>
-        <div id="sliders" style="display:grid;gap:10px"></div>
-      </div>
-
-      <div class="sec">
-        <h2>紙</h2>
-        <div class="seg text" id="papers"></div>
-      </div>
-
-      <div class="sec">
-        <h2>落款</h2>
-        <label class="check"><input type="checkbox" id="sigOn" checked> 署名と印を入れる</label>
-        <label class="field">署名 <input type="text" id="sig" maxlength="14" autocomplete="off"></label>
-        <label class="field">印 <input type="text" id="seal" maxlength="4" autocomplete="off"></label>
-        <label class="field">印の型
-          <select id="sealStyle">
-            <option value="white">白文（朱地に白抜き）</option>
-            <option value="red">朱文（白地に朱の字）</option>
-          </select>
-        </label>
-        <p class="hint">署名と印は自由に入れ替えられます。実在の人物や寺社の名前・印影は使わないでください。</p>
-      </div>
     </div>
   </div>
 
@@ -203,27 +180,10 @@ footer { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 70ch
 
   /* ---------- データ ---------- */
   const YEARS = [[1995,'震'],[1996,'食'],[1997,'倒'],[1998,'毒'],[1999,'末'],[2000,'金'],[2001,'戦'],[2002,'帰'],[2003,'虎'],[2004,'災'],[2005,'愛'],[2006,'命'],[2007,'偽'],[2008,'変'],[2009,'新'],[2010,'暑'],[2011,'絆'],[2012,'金'],[2013,'輪'],[2014,'税'],[2015,'安'],[2016,'金'],[2017,'北'],[2018,'災'],[2019,'令'],[2020,'密'],[2021,'金'],[2022,'戦'],[2023,'税'],[2024,'金'],[2025,'熊']];
-  const FONTS = {
-    boku:   { css: '"Yuji Boku"',   fam: 'Yuji Boku',   label: '墨',   sub: '太筆' },
-    syuku:  { css: '"Yuji Syuku"',  fam: 'Yuji Syuku',  label: '粛',   sub: '端正' },
-    potta:  { css: '"Potta One"',   fam: 'Potta One',   label: '剛',   sub: '極太' },
-    antique:{ css: '"Zen Antique"', fam: 'Zen Antique', label: '古',   sub: '重厚' }
-  };
+  const FONTS = { boku: { css: '"Yuji Boku"', fam: 'Yuji Boku' } };
   const PAPERS = [
     { id: 'nama',  label: '生成り', base: [236, 226, 204] },
-    { id: 'shiro', label: '白和紙', base: [244, 241, 233] },
-    { id: 'usu',   label: '薄墨紙', base: [217, 215, 206] },
-    { id: 'clear', label: '透過PNG' }
-  ];
-  const SLIDERS = [
-    { k: 'weight',  label: '筆の太さ',   min: 0,   max: 1,    step: .01, fmt: v => Math.round(v * 100) },
-    { k: 'density', label: '墨の濃さ',   min: .4,  max: 1.1,  step: .01, fmt: v => Math.round((v - .4) / .7 * 100) },
-    { k: 'kasure',  label: 'かすれ',     min: 0,   max: 1,    step: .01, fmt: v => Math.round(v * 100) },
-    { k: 'bleed',   label: 'にじみ',     min: 0,   max: 1,    step: .01, fmt: v => Math.round(v * 100) },
-    { k: 'rough',   label: '縁のあらさ', min: 0,   max: 1,    step: .01, fmt: v => Math.round(v * 100) },
-    { k: 'wobble',  label: '筆のゆらぎ', min: 0,   max: 14,   step: .5,  fmt: v => Math.round(v / 14 * 100) },
-    { k: 'tilt',    label: '傾き',       min: -8,  max: 8,    step: .1,  fmt: v => v.toFixed(1) + '°' },
-    { k: 'size',    label: '大きさ',     min: .6,  max: 1.15, step: .01, fmt: v => Math.round(v * 100) + '%' }
+    { id: 'clear' }
   ];
 
   const KAN = '〇一二三四五六七八九';
@@ -557,68 +517,29 @@ footer { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 70ch
       b.addEventListener('click', () => applyYear(y, c));
       yg.appendChild(b);
     });
-    const fg = $('fonts');
-    Object.entries(FONTS).forEach(([id, f]) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.dataset.f = id; b.setAttribute('aria-pressed', 'false');
-      b.innerHTML = `<i style="font-family:${f.css},serif">${f.label}</i><em>${f.sub}</em>`;
-      b.addEventListener('click', () => { st.font = id; syncUI(); schedule(30); });
-      fg.appendChild(b);
-    });
-    const sl = $('sliders');
-    SLIDERS.forEach(c => {
-      const row = document.createElement('div'); row.className = 'row';
-      row.innerHTML = `<label for="s_${c.k}">${c.label}</label><input type="range" id="s_${c.k}" min="${c.min}" max="${c.max}" step="${c.step}"><output id="o_${c.k}"></output>`;
-      sl.appendChild(row);
-      row.querySelector('input').addEventListener('input', e => { st[c.k] = parseFloat(e.target.value); $('o_' + c.k).textContent = c.fmt(st[c.k]); schedule(); });
-    });
-    const pg = $('papers');
-    PAPERS.forEach(p => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.dataset.p = p.id; b.textContent = p.label; b.setAttribute('aria-pressed', 'false');
-      b.addEventListener('click', () => { st.paper = p.id; syncUI(); schedule(30); });
-      pg.appendChild(b);
-    });
   }
 
   function syncUI() {
     $('txt').value = st.text;
-    document.querySelectorAll('.year').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.y === st.year && YEARS.find(([y]) => y === st.year)[1] === st.text)));
-    document.querySelectorAll('#fonts button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === st.font)));
-    document.querySelectorAll('#papers button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === st.paper)));
-    SLIDERS.forEach(c => { $('s_' + c.k).value = st[c.k]; $('o_' + c.k).textContent = c.fmt(st[c.k]); });
-    $('sigOn').checked = st.sigOn; $('sig').value = st.sig; $('seal').value = st.seal; $('sealStyle').value = st.sealStyle;
+    document.querySelectorAll('.year').forEach(b => {
+      const y = +b.dataset.y;
+      b.setAttribute('aria-pressed', String(y === st.year && YEARS.find(([yy]) => yy === y)[1] === st.text));
+    });
     sheet.classList.toggle('clear', st.paper === 'clear');
   }
 
-  // 年ごとに筆の勢いを変える（実際の揮毫の再現ではない）
   function applyYear(y, c) {
-    const r = makeRng(y * 7919 + 11), pick = () => r();
-    const f = pick();
-    st.year = y; st.text = c; st.seed = y;
-    st.font = f < .5 ? 'boku' : f < .72 ? 'potta' : f < .9 ? 'syuku' : 'antique';
-    st.weight = st.font === 'potta' ? .08 + pick() * .12 : .15 + pick() * .35;
-    st.kasure = .25 + pick() * .6;
-    st.bleed = .2 + pick() * .55;
-    st.rough = .35 + pick() * .45;
-    st.wobble = 3 + pick() * 9;
-    st.tilt = (pick() - .5) * 5;
-    st.density = .82 + pick() * .22;
-    st.sig = eraText(y) + ' 書';
+    st.year = y; st.text = c; st.seed = y; st.sig = eraText(y) + ' 書';
     syncUI(); schedule(30);
   }
 
   function bindFields() {
     $('txt').addEventListener('input', e => {
-      st.text = e.target.value;
-      document.querySelectorAll('.year').forEach(b => b.setAttribute('aria-pressed', 'false'));
-      schedule(250);
+      st.text = e.target.value; st.year = null; st.sig = eraText(new Date().getFullYear()) + ' 書';
+      syncUI(); schedule(250);
     });
     $('redo').addEventListener('click', () => { st.seed = (Math.random() * 1e9) | 0; schedule(20); });
-    $('sigOn').addEventListener('change', e => { st.sigOn = e.target.checked; schedule(60); });
-    $('sig').addEventListener('input', e => { st.sig = e.target.value; schedule(300); });
-    $('seal').addEventListener('input', e => { st.seal = e.target.value; schedule(300); });
-    $('sealStyle').addEventListener('change', e => { st.sealStyle = e.target.value; schedule(60); });
+    $('clearBg').addEventListener('change', e => { st.paper = e.target.checked ? 'clear' : 'nama'; syncUI(); schedule(40); });
   }
 
   /* ---------- 保存 ---------- */
