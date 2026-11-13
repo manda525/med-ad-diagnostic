@@ -1,5 +1,6 @@
 import Head from "next/head";
 import App from "../components/DiagnosticV2";
+import { RADAR_FONT_HREF } from "../components/radarTheme";
 
 const SITE_URL = "https://med-ad-diagnostic.vercel.app";
 const TITLE = "薬機レーダー｜薬機法・景表法・医療広告GL AIチェック";
@@ -34,22 +35,45 @@ export default function Home() {
         <meta name="twitter:image" content={OG_IMAGE} />
 
         <link rel="canonical" href={SITE_URL} />
+
+        {/* 書体（親サイト med-ad-masa.com と同じ3書体）。トップだけで読み込む */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={RADAR_FONT_HREF} />
       </Head>
-      <main>
+      <main className="rd-main">
         <App />
       </main>
-      <footer style={{textAlign:"center",padding:"32px 16px",fontSize:13,color:"var(--color-text-secondary)",borderTop:"0.5px solid var(--color-border-tertiary)",marginTop:24}}>
-        <div style={{marginBottom:10}}>
-          <a href="/consult" style={{color:"var(--color-text-info)",margin:"0 8px",fontWeight:500}}>監修サービスのご案内</a>
-          ・
-          <a href="/household" style={{color:"var(--color-text-info)",margin:"0 8px",fontWeight:500}}>世帯の医療費計算機（無料）</a>
+      <footer className="rd rd-ft">
+        <div className="wrap ft-grid">
+          <div>
+            <a className="logo" href="https://med-ad-masa.com" target="_blank" rel="noopener noreferrer" aria-label="Pharma-Ad Lab">
+              <svg viewBox="0 0 512 512" aria-hidden="true">
+                <rect width="512" height="512" rx="112" fill="#0f5b4e" />
+                <rect x="196" y="74" width="120" height="58" rx="16" fill="#f3f1e9" />
+                <rect x="182" y="148" width="148" height="298" rx="70" fill="#f3f1e9" />
+                <path d="M182 326h148v50a70 70 0 0 1-70 70h-8a70 70 0 0 1-70-70z" fill="#d4451b" />
+              </svg>
+              <span>Pharma<span className="ad">-Ad</span><span className="lab">Lab</span></span>
+            </a>
+          </div>
+          <div>
+            <ul>
+              <li><a href="/consult">監修サービスのご案内</a></li>
+              <li><a href="/household">世帯の医療費計算機（無料）</a></li>
+            </ul>
+          </div>
+          <div>
+            <ul>
+              <li><a href="/tokushoho">特定商取引法に基づく表記</a></li>
+              <li><a href="/terms">利用規約</a></li>
+              <li><a href="/privacy">プライバシーポリシー</a></li>
+            </ul>
+          </div>
         </div>
-        <a href="/tokushoho" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>特定商取引法に基づく表記</a>
-        ・
-        <a href="/terms" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>利用規約</a>
-        ・
-        <a href="/privacy" style={{color:"var(--color-text-secondary)",margin:"0 8px"}}>プライバシーポリシー</a>
-        <div style={{marginTop:8}}>© 2026 <a href="https://med-ad-masa.com" target="_blank" rel="noopener noreferrer" style={{color:"inherit"}}>Pharma-Ad Lab</a></div>
+        <div className="wrap ft-bottom mono">
+          © 2026 <a href="https://med-ad-masa.com" target="_blank" rel="noopener noreferrer">Pharma-Ad Lab</a>
+        </div>
       </footer>
     </>
   );

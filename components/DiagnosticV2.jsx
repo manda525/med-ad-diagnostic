@@ -3,6 +3,7 @@ import { INDUSTRIES, MEDIA } from "../lib/taxonomy";
 import stats from "../data/stats.json";
 import { superviseFeeFor, buildSubject, buildMetaLines, buildApplyText, buildMailto } from "../lib/supervise";
 import { inferContext } from "../lib/infer";
+import { RADAR_CSS } from "./radarTheme";
 
 // ===== 定数 =====
 // 無料枠は1日5回（サーバー側 lib/usage.js と揃える）。3回目以降はLINE案内を出す。
@@ -33,15 +34,15 @@ const SAMPLES = [
 ];
 
 const JUDGMENT_STYLE = {
-  "修正必須": { c: "#B42318", bg: "#FEF3F2", bd: "#FDA29B" },
-  "要修正":   { c: "#B54708", bg: "#FFFAEB", bd: "#FEC84B" },
-  "軽微修正": { c: "#175CD3", bg: "#EFF8FF", bd: "#84CAFF" },
-  "問題なし": { c: "#067647", bg: "#ECFDF3", bd: "#75E0A7" },
+  "修正必須": { c: "#A3261A", bg: "#F7E6DF", bd: "#D9A394" },
+  "要修正":   { c: "#7D5200", bg: "#F6ECD0", bd: "#D6B96A" },
+  "軽微修正": { c: "#1F4F8F", bg: "#E3EAF1", bd: "#9DB4CF" },
+  "問題なし": { c: "#0F5B4E", bg: "#E3EFE8", bd: "#9CC5B6" },
 };
 const LEVEL_STYLE = {
-  HIGH:   { c: "#B42318", bg: "#FEF3F2" },
-  MEDIUM: { c: "#B54708", bg: "#FFFAEB" },
-  LOW:    { c: "#175CD3", bg: "#EFF8FF" },
+  HIGH:   { c: "#A3261A", bg: "#F7E6DF" },
+  MEDIUM: { c: "#7D5200", bg: "#F6ECD0" },
+  LOW:    { c: "#1F4F8F", bg: "#E3EAF1" },
 };
 
 // ===== 原文ハイライト =====
@@ -321,525 +322,518 @@ export default function DiagnosticV2() {
     [superviseApplyText, superviseMailto, legacyCopy]
   );
 
+  const remaining = Math.max(0, HARD_LIMIT - usageCount);
+  const consultMailto = `mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`;
+
   return (
-    <div className="v2">
+    <div className="v2 rd">
       {/* SSRで引用符が &quot; / &#x27; にエスケープされ、クライアントと文字列が一致せず
           ハイドレーションが失敗する（Next 14で再現）。__html で渡すとエスケープされない。 */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        .v2 { --ink:#182430; --ink2:#44576B; --ink3:#8296A9; --line:#E3E9EF; --line2:#CBD6E0;
-              --paper:#FFFFFF; --paper2:#F6F8FA; --acc:#0E5E6F; --acc-bg:#EAF4F5; --acc-bd:#9CC5CC;
-              padding: 1.25rem 0 3rem; color: var(--ink); }
-        .v2 .serif { font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif; }
-        .v2 .card { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:1.25rem 1.4rem; margin-bottom:14px; }
-        .v2 .step-num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%;
-              background:var(--ink); color:#fff; font-size:13px; font-weight:600; flex-shrink:0; }
-        .v2 .step-num.done { background:var(--acc); }
-        .v2 .step-num.off { background:var(--line2); }
-        .v2 .step-head { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
-        .v2 .step-title { font-size:15px; font-weight:600; letter-spacing:0.01em; }
-        .v2 .step-sub { font-size:12px; color:var(--ink3); margin:0 0 14px 36px; }
-        .v2 .grid { display:grid; gap:8px; }
-        .v2 .tile { text-align:left; padding:11px 13px; border-radius:10px; background:var(--paper); border:1px solid var(--line);
-              cursor:pointer; transition:border-color .12s, background .12s; color:var(--ink); }
-        .v2 .tile:hover { border-color:var(--acc-bd); background:var(--acc-bg); opacity:1; }
-        .v2 .tile.on { border:1.5px solid var(--acc); background:var(--acc-bg); }
-        .v2 .tile .t1 { font-size:13.5px; font-weight:600; }
-        .v2 .tile .t2 { font-size:11px; color:var(--ink3); margin-top:2px; line-height:1.45; }
-        .v2 .tile.on .t2 { color:var(--acc); }
-        .v2 .ico { font-size:0.9em; opacity:0.45; margin-right:3px; filter:grayscale(0.35); }
-        .v2 .chip { font-size:12.5px; padding:7px 14px; border-radius:999px; border:1px solid var(--line2); background:var(--paper);
-              cursor:pointer; color:var(--ink2); font-weight:500; }
-        .v2 .chip.on { background:var(--ink); border-color:var(--ink); color:#fff; }
-        .v2 .btn-primary { background:var(--ink); color:#fff; border:none; padding:13px 34px; font-size:15px; font-weight:600;
-              border-radius:10px; cursor:pointer; letter-spacing:0.03em; }
-        .v2 .btn-primary:disabled { background:var(--line2); cursor:not-allowed; }
-        .v2 .btn-ghost { background:var(--paper); color:var(--ink2); border:1px solid var(--line2); padding:6px 14px;
-              font-size:12px; border-radius:8px; cursor:pointer; }
-        .v2 mark { border-radius:3px; padding:0 2px; }
-        .v2 mark.HIGH { background:#FEE4E2; color:#912018; }
-        .v2 mark.MEDIUM { background:#FEF0C7; color:#7A2E0E; }
-        .v2 mark.LOW { background:#D1E9FF; color:#194185; }
-        .v2 textarea { width:100%; box-sizing:border-box; resize:vertical; padding:13px 15px; font-size:14px; line-height:1.8;
-              border:1px solid var(--line2); border-radius:10px; background:var(--paper); color:var(--ink);
-              font-family:inherit; outline:none; min-height:130px; }
-        .v2 textarea:focus { border-color:var(--acc) !important; box-shadow:0 0 0 3px var(--acc-bg); }
-        @keyframes v2spin { to { transform: rotate(360deg); } }
-        @media (max-width:560px){ .v2 .card{ padding:1rem 1rem; } }
-      ` }} />
+      <style dangerouslySetInnerHTML={{ __html: RADAR_CSS }} />
 
-      {/* ===== ヘッダー ===== */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-          <div>
-            <p style={{ fontSize: 11, letterSpacing: "0.14em", color: "var(--acc)", fontWeight: 600, margin: "0 0 6px" }}>
-              PHARMA-AD LAB
-            </p>
-            <h1 className="serif" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.45, margin: "0 0 4px" }}>
-              薬機レーダー
-            </h1>
-            <p style={{ fontSize: 12.5, letterSpacing: "0.02em", color: "var(--acc)", fontWeight: 600, margin: "0 0 9px" }}>
-              薬機法・景表法・医療広告GL　AIチェック
-            </p>
-            <p style={{ fontSize: 13.5, lineHeight: 1.9, color: "var(--ink2)", margin: 0, maxWidth: 620 }}>
-              広告文を貼るだけ。薬機法・景表法・医療広告GLなどに照らして、
-              条文根拠つきでリスク箇所と修正案を返します。
-            </p>
+      {/* ===== ナビ ===== */}
+      <header className="nav">
+        <div className="wrap">
+          <div className="brand">
+            <a className="logo" href="https://med-ad-masa.com" target="_blank" rel="noopener noreferrer" aria-label="Pharma-Ad Lab">
+              <LogoMark />
+              <span>Pharma<span className="ad">-Ad</span><span className="lab">Lab</span></span>
+            </a>
+            <a className="tool" href="/">薬機レーダー</a>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <span style={{ fontSize: 11, color: "var(--ink3)" }}>
-              {isPro ? "✓ Pro（無制限）" : `無料・本日あと ${Math.max(0, HARD_LIMIT - usageCount)}/${HARD_LIMIT}回`}
-            </span>
-            {isPro && <button className="btn-ghost" onClick={openPortal}>支払い・解約</button>}
-            <button className="btn-ghost" onClick={() => setShowContact(!showContact)} style={{ borderColor: "var(--acc-bd)", color: "var(--acc)", fontWeight: 600 }}>
+          <nav className="navlinks" aria-label="主なメニュー">
+            <a className="navlink" href="/consult">監修サービスのご案内</a>
+            <a className="navlink" href="/household">世帯の医療費計算機（無料）</a>
+            <button type="button" className="btn btn-fill btn-sm" aria-expanded={showContact} aria-controls="v2-contact"
+              onClick={() => setShowContact(!showContact)}>
               監修相談
             </button>
-          </div>
+          </nav>
         </div>
-      </div>
+      </header>
 
-      {showContact && (
-        <div className="card" style={{ background: "var(--acc-bg)", borderColor: "var(--acc-bd)" }}>
-          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: "var(--acc)" }}>広告監修・コンサルティングのご相談</p>
-          <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 10px", lineHeight: 1.7 }}>
-            LP全文精査・薬機法対応・継続監修契約など、薬剤師×医療広告コンプライアンス専門家として対応します。
-          </p>
-          <p style={{ margin: "0 0 12px" }}><a href="/consult" style={{ fontSize: 13, color: "var(--acc)", fontWeight: 600, textDecoration: "none" }}>監修サービスの詳細を見る →</a></p>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <a className="btn-ghost" style={{ textDecoration: "none" }} href={`mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`}>📧 メールで相談</a>
-            <a className="btn-ghost" style={{ textDecoration: "none" }} href="https://x.com/Pharma_Ad_Lab" target="_blank" rel="noopener noreferrer">𝕏 DMで相談</a>
-            <a className="btn-ghost" style={{ textDecoration: "none" }} href="https://note.com/med_ad_consult" target="_blank" rel="noopener noreferrer">note</a>
-          </div>
+      <div className="wrap top">
+        <div className="mast mono">
+          <span>Pharma-Ad Lab</span>
+          <span>薬機法・景表法・医療広告GL</span>
+          <span>ルール {stats.rule_version}</span>
         </div>
-      )}
 
-      {/* ===== 上限到達 ===== */}
-      {isOverHardLimit && (
-        <div className="card" style={{ borderColor: "#FEC84B", background: "#FFFCF5" }}>
-          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 8px", color: "#B54708" }}>本日の無料診断（5回）を使い切りました。24時間後にまた使えます</p>
-          <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 12px", lineHeight: 1.7 }}>
-            入稿が近い原稿は、薬剤師・薬機法管理者が人の目で確定させます。3円/文字（最低1万円）、1営業日以内に返信します。
-          </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <a href={`mailto:${CONTACT_EMAIL}?subject=広告監修の申込&body=【原稿】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【入稿予定日】`}
-              style={{ display: "inline-block", fontSize: 14, padding: "11px 26px", borderRadius: 8, background: "var(--ink)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-              薬剤師の監修に出す
-            </a>
-            <a href="/consult" style={{ fontSize: 13, color: "var(--acc)", fontWeight: 600, textDecoration: "none" }}>監修サービスの詳細 →</a>
-          </div>
-        </div>
-      )}
-
-      {/* ===== STEP 3 入力 ===== */}
-      <div className="card">
-        <div className="step-head">
-          <span className="step-title" style={{ fontSize: 16 }}>広告文を貼り付ける</span>
-        </div>
-        <p className="step-sub" style={{ marginLeft: 0 }}>LP文言・SNS投稿・パッケージ文言などをそのまま貼り付けてください（8,000文字まで）。業種と媒体は本文から自動で判定します。</p>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
-          placeholder={"例：飲むだけでみるみる痩せる！医師も推奨するサプリで、糖尿病の予防にも。"} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, gap: 10, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: "var(--ink3)" }}>サンプル:</span>
-            {SAMPLES.map((s, i) => (
-              <button key={i} type="button" className="chip" style={{ fontSize: 11, padding: "4px 10px" }} onClick={() => pickSample(s)}>{s.label}</button>
-            ))}
-          </div>
-          <span style={{ fontSize: 12, color: "var(--ink3)" }}>{text.length}文字</span>
-        </div>
-      </div>
-
-
-      {/* ===== 判定条件の確認（推定結果） ===== */}
-      {!!text.trim() && (
-        <div className="card" style={{ background: "var(--acc-bg)", borderColor: "var(--acc-bd)", padding: "0.9rem 1.2rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 12.5, color: "var(--ink2)" }}>
-              {manualPick ? "この条件で判定します：" : "本文から判定しました："}
-            </span>
-            <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--acc)" }}>
-              {selectedIndustry?.label || "―"}
-              {sub ? `・${selectedIndustry?.subs.find((x) => x.id === sub)?.label || ""}` : ""}
-              {" ／ "}
-              {MEDIA.find((m) => m.id === media)?.label || "―"}
-            </span>
-            <button type="button" className="btn-ghost" onClick={() => setPickerOpen((v) => !v)}
-              style={{ marginLeft: "auto", borderColor: "var(--acc-bd)", color: "var(--acc)", fontWeight: 600 }}>
-              {pickerOpen ? "閉じる" : "変更する"}
-            </button>
-          </div>
-          {!manualPick && (
-            <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "8px 0 0" }}>
-              業種で適用される法令が変わります。違っていれば「変更する」で選び直してください。
-            </p>
-          )}
-        </div>
-      )}
-      {/* ===== 実行 ===== */}
-      <div style={{ textAlign: "center", margin: "20px 0 26px" }}>
-        <button type="button" className="btn-primary" disabled={!canRun} onClick={run}>
-          {loading ? "診断中..." : isOverHardLimit ? "利用上限に到達" : "リスク診断を実行 →"}
-        </button>
-        {!text.trim() && <p style={{ fontSize: 12, color: "var(--ink3)", marginTop: 8 }}>広告文を貼り付けてください</p>}
-        {!!text.trim() && needsClient && !clientIndustry && <p style={{ fontSize: 12, color: "#B54708", marginTop: 8 }}>受託先（広告主）の業種を選んでください</p>}
-      </div>
-
-
-      {/* ===== 業種・媒体の手動選択（既定は閉じる） ===== */}
-      {(pickerOpen || (needsClient && !clientIndustry)) && (
-      <>
-      {/* ===== STEP 1 業種 ===== */}
-      <div className="card">
-        <div className="step-head">
-          <span className={`step-num ${step1Done ? "done" : ""}`}>1</span>
-          <span className="step-title">クライアントの業種</span>
-          {step1Done && <span style={{ fontSize: 12, color: "var(--acc)", fontWeight: 600 }}>✓ {selectedIndustry?.label}{sub ? `・${selectedIndustry?.subs.find((s) => s.id === sub)?.label}` : ""}</span>}
-        </div>
-        <p className="step-sub">業種で適用される法令が変わります（例：整骨院は柔整法、ペットフードは景表法＋公正競争規約）</p>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(158px,1fr))" }}>
-          {INDUSTRIES.map((ind) => (
-            <button key={ind.id} type="button" className={`tile ${industry === ind.id ? "on" : ""}`}
-              onClick={() => { setManualPick(true); setIndustry(ind.id); setSub(null); if (ind.id !== "F") { setClientIndustry(null); setClientSub(null); } }}>
-              <div className="t1"><span className="ico">{ind.icon}</span>{ind.label}</div>
-              <div className="t2">{ind.desc}</div>
-            </button>
-          ))}
-        </div>
-        {selectedIndustry && (
-          <div style={{ marginTop: 12 }}>
-            <p style={{ fontSize: 12, color: "var(--ink3)", margin: "0 0 8px" }}>詳細（任意・選ぶと精度が上がります）</p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {selectedIndustry.subs.map((s) => (
-                <button key={s.id} type="button" className={`chip ${sub === s.id ? "on" : ""}`} onClick={() => { setManualPick(true); setSub(sub === s.id ? null : s.id); }}>
-                  {s.label}
-                </button>
-              ))}
+        <div className="first">
+          {/* ===== 見出し ===== */}
+          <div className="intro">
+            <div className="head">
+              <p className="kicker mono">PHARMA-AD LAB</p>
+              <h1>薬機レーダー<span className="sig">。</span></h1>
+              <p className="tag">薬機法<i>・</i>景表法<i>・</i>医療広告GL　AIチェック</p>
+              <p className="lead">
+                広告文を貼るだけ。<span className="nb">薬機法・景表法・医療広告GLなどに照らして、</span>
+                <span className="nb">条文根拠つきで</span><span className="nb">リスク箇所と修正案を返します。</span>
+              </p>
             </div>
+            <dl className="facts">
+              <div>
+                <dt>無料</dt>
+                <dd>{isPro ? "✓ Pro（無制限）" : <>本日あと<span className="num">{remaining}/{HARD_LIMIT}</span>回</>}</dd>
+              </div>
+              <div><dt>法令DB</dt><dd><span className="num">{stats.law_count}</span>件</dd></div>
+              <div><dt>ルール</dt><dd><span className="num">{stats.rule_version}</span>（<span className="num">{stats.rule_count}</span>件）</dd></div>
+            </dl>
           </div>
-        )}
-        {needsClient && (
-          <div style={{ marginTop: 14, padding: "12px 14px", background: "var(--paper2)", borderRadius: 10 }}>
-            <p style={{ fontSize: 12.5, fontWeight: 600, margin: "0 0 8px" }}>受託先（広告主）の業種 <span style={{ color: "#B42318" }}>必須</span></p>
-            <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "0 0 8px" }}>制作物は受託先業種の規制を継承します。加えてステマ規制・表示主体責任をチェックします。</p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {INDUSTRIES.filter((i) => i.id !== "F").map((i) => (
-                <button key={i.id} type="button" className={`chip ${clientIndustry === i.id ? "on" : ""}`}
-                  onClick={() => { setManualPick(true); setClientIndustry(i.id); setClientSub(null); }}>
-                  <span className="ico">{i.icon}</span>{i.label}
+
+          <div className="col">
+            {/* ===== 監修相談 ===== */}
+            {showContact && (
+              <div className="blk tint acc" id="v2-contact">
+                <p className="blk-h">広告監修・コンサルティングのご相談</p>
+                <p className="blk-p">
+                  LP全文精査・薬機法対応・継続監修契約など、薬剤師×医療広告コンプライアンス専門家として対応します。
+                </p>
+                <p className="blk-p"><a className="more" href="/consult">監修サービスの詳細を見る <Arw /></a></p>
+                <div className="acts">
+                  <a className="btn btn-rule btn-sm" href={consultMailto}>メールで相談</a>
+                  <a className="btn btn-rule btn-sm" href="https://x.com/Pharma_Ad_Lab" target="_blank" rel="noopener noreferrer">X DMで相談</a>
+                  <a className="btn btn-rule btn-sm" href="https://note.com/med_ad_consult" target="_blank" rel="noopener noreferrer">note</a>
+                </div>
+              </div>
+            )}
+
+            {/* ===== 上限到達 ===== */}
+            {isOverHardLimit && (
+              <div className="blk tint warn">
+                <p className="blk-h">本日の無料診断（5回）を使い切りました。24時間後にまた使えます</p>
+                <p className="blk-p">
+                  入稿が近い原稿は、薬剤師・薬機法管理者が人の目で確定させます。3円/文字（最低1万円）、1営業日以内に返信します。
+                </p>
+                <div className="acts">
+                  <a className="btn btn-fill btn-sm" href={`mailto:${CONTACT_EMAIL}?subject=広告監修の申込&body=【原稿】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【入稿予定日】`}>
+                    薬剤師の監修に出す
+                  </a>
+                  <a className="more" href="/consult">監修サービスの詳細 <Arw /></a>
+                </div>
+              </div>
+            )}
+
+            {/* ===== 記入欄（入力・判定条件・実行） ===== */}
+            <div className="form">
+              <div className="form-head">
+                <span className="mono">記入欄</span>
+                <span className="quota">
+                  {isPro ? "✓ Pro（無制限）" : <>無料・本日あと <span className="num">{remaining}/{HARD_LIMIT}</span>回</>}
+                  {isPro && <button type="button" className="link-btn" onClick={openPortal}>支払い・解約</button>}
+                </span>
+              </div>
+              <div className="form-body">
+                <label className="ttl" htmlFor="v2-text">広告文を貼り付ける</label>
+                <p className="sub" id="v2-text-sub">LP文言・SNS投稿・パッケージ文言などをそのまま貼り付けてください（8,000文字まで）。業種と媒体は本文から自動で判定します。</p>
+                <textarea id="v2-text" className="sheet" aria-describedby="v2-text-sub" value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
+                  placeholder={"例：飲むだけでみるみる痩せる！医師も推奨するサプリで、糖尿病の予防にも。"} />
+                <div className="under">
+                  <div className="samples">
+                    <span className="lbl">サンプル:</span>
+                    {SAMPLES.map((s, i) => (
+                      <button key={i} type="button" className={`chip ${text === s.text ? "on" : ""}`} onClick={() => pickSample(s)}>{s.label}</button>
+                    ))}
+                  </div>
+                  <span className="count"><span className="num">{text.length.toLocaleString()}</span>文字</span>
+                </div>
+
+                {/* 判定条件の確認（推定結果） */}
+                {!!text.trim() && (
+                  <div className="cond">
+                    <span className="k">{manualPick ? "この条件で判定します：" : "本文から判定しました："}</span>
+                    <div className="cond-row">
+                      <span className="v">
+                        {selectedIndustry?.label || "―"}
+                        {sub ? `・${selectedIndustry?.subs.find((x) => x.id === sub)?.label || ""}` : ""}
+                        {" ／ "}
+                        {MEDIA.find((m) => m.id === media)?.label || "―"}
+                      </span>
+                      <button type="button" className="link-btn" aria-expanded={pickerOpen} onClick={() => setPickerOpen((v) => !v)}>
+                        {pickerOpen ? "閉じる" : "変更する"}
+                      </button>
+                    </div>
+                    {!manualPick && (
+                      <p className="note">業種で適用される法令が変わります。違っていれば「変更する」で選び直してください。</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 実行 */}
+              <div className="run">
+                <button type="button" className="btn btn-fill btn-run" disabled={!canRun} onClick={run}>
+                  {loading ? "診断中..." : isOverHardLimit ? "利用上限に到達" : <>リスク診断を実行 <Arw /></>}
                 </button>
-              ))}
+                {!text.trim() && <p className="hint">広告文を貼り付けてください</p>}
+                {!!text.trim() && needsClient && !clientIndustry && <p className="hint warn">受託先（広告主）の業種を選んでください</p>}
+              </div>
             </div>
-            {clientIndustryObj && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                {clientIndustryObj.subs.map((s) => (
-                  <button key={s.id} type="button" className={`chip ${clientSub === s.id ? "on" : ""}`} onClick={() => { setManualPick(true); setClientSub(clientSub === s.id ? null : s.id); }}>
-                    {s.label}
+
+            {/* ===== 業種・媒体の手動選択（既定は閉じる） ===== */}
+            {(pickerOpen || (needsClient && !clientIndustry)) && (
+            <>
+            {/* ===== STEP 1 業種 ===== */}
+            <div className="blk">
+              <div className="step-head">
+                <span className={`step-num ${step1Done ? "done" : ""}`}>01</span>
+                <span className="blk-h">クライアントの業種</span>
+                {step1Done && <span className="picked">✓ {selectedIndustry?.label}{sub ? `・${selectedIndustry?.subs.find((s) => s.id === sub)?.label}` : ""}</span>}
+              </div>
+              <p className="step-sub">業種で適用される法令が変わります（例：整骨院は柔整法、ペットフードは景表法＋公正競争規約）</p>
+              <div className="grid ind">
+                {INDUSTRIES.map((ind) => (
+                  <button key={ind.id} type="button" className={`tile ${industry === ind.id ? "on" : ""}`} aria-pressed={industry === ind.id}
+                    onClick={() => { setManualPick(true); setIndustry(ind.id); setSub(null); if (ind.id !== "F") { setClientIndustry(null); setClientSub(null); } }}>
+                    <div className="t1">{ind.label}</div>
+                    <div className="t2">{ind.desc}</div>
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-      </div>
+              {selectedIndustry && (
+                <div className="subs">
+                  <p className="step-note">詳細（任意・選ぶと精度が上がります）</p>
+                  <div className="chips">
+                    {selectedIndustry.subs.map((s) => (
+                      <button key={s.id} type="button" className={`chip ${sub === s.id ? "on" : ""}`} aria-pressed={sub === s.id} onClick={() => { setManualPick(true); setSub(sub === s.id ? null : s.id); }}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {needsClient && (
+                <div className="client">
+                  <p className="client-h">受託先（広告主）の業種 <span className="req">必須</span></p>
+                  <p className="step-note">制作物は受託先業種の規制を継承します。加えてステマ規制・表示主体責任をチェックします。</p>
+                  <div className="chips">
+                    {INDUSTRIES.filter((i) => i.id !== "F").map((i) => (
+                      <button key={i.id} type="button" className={`chip ${clientIndustry === i.id ? "on" : ""}`} aria-pressed={clientIndustry === i.id}
+                        onClick={() => { setManualPick(true); setClientIndustry(i.id); setClientSub(null); }}>
+                        {i.label}
+                      </button>
+                    ))}
+                  </div>
+                  {clientIndustryObj && (
+                    <div className="chips" style={{ marginTop: 8 }}>
+                      {clientIndustryObj.subs.map((s) => (
+                        <button key={s.id} type="button" className={`chip ${clientSub === s.id ? "on" : ""}`} aria-pressed={clientSub === s.id} onClick={() => { setManualPick(true); setClientSub(clientSub === s.id ? null : s.id); }}>
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-      {/* ===== STEP 2 媒体 ===== */}
-      <div className="card">
-        <div className="step-head">
-          <span className={`step-num ${step2Done ? "done" : step1Done ? "" : "off"}`}>2</span>
-          <span className="step-title">広告を出す媒体</span>
-          {media && <span style={{ fontSize: 12, color: "var(--acc)", fontWeight: 600 }}>✓ {MEDIA.find((m) => m.id === media)?.label}</span>}
-        </div>
-        <p className="step-sub">媒体で「広告該当性」や要件が変わります（例：SNSはステマ規制、医療HPは限定解除）</p>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))" }}>
-          {MEDIA.map((m) => (
-            <button key={m.id} type="button" className={`tile ${media === m.id ? "on" : ""}`} onClick={() => { setManualPick(true); setMedia(m.id); }}>
-              <div className="t1"><span className="ico">{m.icon}</span>{m.label}</div>
-            </button>
-          ))}
-        </div>
-        {media && <p style={{ fontSize: 11.5, color: "var(--acc)", margin: "10px 0 0" }}>◎ {MEDIA.find((m) => m.id === media)?.note}</p>}
-      </div>
-
-      </>
-      )}
-      {loading && (
-        <div className="card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 18, animation: "v2spin 1s linear infinite", display: "inline-block" }}>⟳</span>
-          <span style={{ fontSize: 13.5, color: "var(--ink2)" }}>{stepMsg}</span>
-        </div>
-      )}
-
-      {err && (
-        <div className="card" style={{ background: "#FEF3F2", borderColor: "#FDA29B" }}>
-          <p style={{ fontSize: 13, color: "#B42318", margin: "0 0 6px" }}>⚠ {err}</p>
-          {!isOverHardLimit && <button className="btn-ghost" type="button" onClick={run}>もう一度試す</button>}
-        </div>
-      )}
-
-      {/* ===== 結果 ===== */}
-      {a && (
-        <div ref={resultRef}>
-          {/* 判定ヘッダー */}
-          <div className="card" style={{ borderColor: jStyle.bd, background: jStyle.bg }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div>
-                <p style={{ fontSize: 11, letterSpacing: "0.1em", color: jStyle.c, fontWeight: 600, margin: "0 0 4px" }}>最終判定</p>
-                <p className="serif" style={{ fontSize: 30, fontWeight: 700, color: jStyle.c, margin: 0, lineHeight: 1.2 }}>{a.final_judgment}</p>
+            {/* ===== STEP 2 媒体 ===== */}
+            <div className="blk">
+              <div className="step-head">
+                <span className={`step-num ${step2Done ? "done" : step1Done ? "" : "off"}`}>02</span>
+                <span className="blk-h">広告を出す媒体</span>
+                {media && <span className="picked">✓ {MEDIA.find((m) => m.id === media)?.label}</span>}
               </div>
-              <div style={{ display: "flex", gap: 22, textAlign: "center" }}>
-                <div>
-                  <p style={{ fontSize: 28, fontWeight: 700, margin: 0, color: jStyle.c }}>{a.risk_score}</p>
-                  <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>リスクスコア</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: 28, fontWeight: 700, margin: 0, color: "#067647" }}>{a.sayable?.length || 0}</p>
-                  <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>言える切り口</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: 28, fontWeight: 700, margin: 0, color: "var(--ink)" }}>{a.risk_items?.length || 0}</p>
-                  <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>直す点</p>
-                </div>
-              </div>
-            </div>
-            <p style={{ fontSize: 13.5, lineHeight: 1.8, color: "var(--ink)", margin: "12px 0 0" }}>{a.summary}</p>
-          </div>
-
-          {/* 原文ハイライト */}
-          {highlighted && (
-            <div className="card">
-              <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 10px" }}>原文チェック <span style={{ fontWeight: 400, fontSize: 11, color: "var(--ink3)" }}>色付き＝指摘箇所</span></p>
-              <p style={{ fontSize: 14, lineHeight: 2.0, margin: 0, whiteSpace: "pre-wrap" }}>
-                {highlighted.map((s, i) => s.level
-                  ? <mark key={i} className={s.level}>{s.t}</mark>
-                  : <span key={i}>{s.t}</span>)}
-              </p>
-            </div>
-          )}
-
-          {/* 媒体注意 */}
-          {a.media_notes && (
-            <div className="card" style={{ background: "var(--acc-bg)", borderColor: "var(--acc-bd)" }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "var(--acc)", margin: "0 0 4px" }}>
-                {MEDIA.find((m) => m.id === media)?.icon} この媒体での注意（{MEDIA.find((m) => m.id === media)?.label}）
-              </p>
-              <p style={{ fontSize: 13, lineHeight: 1.8, margin: 0, color: "var(--ink)" }}>{a.media_notes}</p>
-            </div>
-          )}
-
-          {/* 言える範囲（指摘より先に出す） */}
-          {a.sayable?.length > 0 && (
-            <div className="card" style={{ borderColor: "#ABEFC6", background: "#F6FEF9" }}>
-              <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 3px", color: "#067647" }}>この商材で言えること（{a.sayable.length}件）</p>
-              <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 10px" }}>訴求を落とさずに使える切り口です。ここから組み立ててください</p>
-              {a.sayable.map((s, i) => (
-                <div key={i} style={{ padding: "10px 0", borderTop: i > 0 ? "1px solid #D1FADF" : "none" }}>
-                  <p style={{ fontSize: 12.5, fontWeight: 600, margin: "0 0 4px", color: "var(--ink)" }}>{s.angle}</p>
-                  <p style={{ fontSize: 13.5, margin: 0, lineHeight: 1.7, color: "var(--ink)" }}>「{s.example}」</p>
-                  {s.caveat && <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "5px 0 0", lineHeight: 1.6 }}>条件：{s.caveat}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 直す点 */}
-          {a.risk_items?.length > 0 && (
-            <div className="card">
-              <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 3px" }}>直す点（{a.risk_items.length}件）</p>
-              <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 6px" }}>それぞれに代替案を付けています</p>
-              {a.risk_items.map((item, i) => {
-                const ls = LEVEL_STYLE[item.level] || LEVEL_STYLE.MEDIUM;
-                return (
-                  <div key={i} style={{ padding: "12px 0", borderTop: i > 0 ? "1px solid var(--line)" : "none" }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 11, padding: "2px 9px", borderRadius: 999, background: ls.bg, color: ls.c, fontWeight: 700, flexShrink: 0 }}>{item.level}</span>
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>「{item.expression}」</span>
-                    </div>
-                    <p style={{ fontSize: 13, color: "var(--ink2)", margin: "0 0 5px", lineHeight: 1.7 }}>{item.reason}</p>
-                    {item.alternative && (
-                      <div style={{ background: "#ECFDF3", borderRadius: 8, padding: "9px 11px", margin: "0 0 6px" }}>
-                        <p style={{ fontSize: 10.5, color: "#067647", margin: "0 0 3px", fontWeight: 700 }}>こう直せば出せる</p>
-                        <p style={{ fontSize: 13, margin: 0, lineHeight: 1.7, color: "var(--ink)" }}>{item.alternative}</p>
-                      </div>
-                    )}
-                    <span style={{ fontSize: 11, color: "var(--acc)", background: "var(--acc-bg)", padding: "2px 8px", borderRadius: 4, fontWeight: 600 }}>
-                      {item.law}{item.law_id ? `（${item.law_id}）` : ""}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* 修正提案 */}
-          {a.suggestions?.length > 0 && (
-            <div className="card">
-              <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 10px" }}>修正提案</p>
-              {a.suggestions.map((s, i) => (
-                <div key={i} style={{ padding: "10px 0", borderTop: i > 0 ? "1px solid var(--line)" : "none" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div style={{ background: "#FEF3F2", borderRadius: 8, padding: "9px 11px" }}>
-                      <p style={{ fontSize: 10.5, color: "#B42318", margin: "0 0 3px", fontWeight: 700 }}>NG</p>
-                      <p style={{ fontSize: 13, margin: 0, lineHeight: 1.6 }}>{s.original}</p>
-                    </div>
-                    <div style={{ background: "#ECFDF3", borderRadius: 8, padding: "9px 11px" }}>
-                      <p style={{ fontSize: 10.5, color: "#067647", margin: "0 0 3px", fontWeight: 700 }}>修正案</p>
-                      <p style={{ fontSize: 13, margin: 0, lineHeight: 1.6 }}>{s.revised}</p>
-                    </div>
-                  </div>
-                  {s.point && <p style={{ fontSize: 12, color: "var(--ink3)", margin: "6px 0 0" }}>{s.point}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 法的根拠（一次ソースリンク） */}
-          {a.legal_basis?.length > 0 && (
-            <div className="card">
-              <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 3px" }}>法的根拠</p>
-              <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 8px" }}>一次ソース（省庁・e-Gov等）で検証済みの法令データベースに基づく判定です</p>
-              {/* 信頼の裏づけは「使う前」でなく「判定の根拠」として出す */}
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", padding: "8px 0 12px", borderBottom: "1px solid var(--line)", marginBottom: 12 }}>
-                {[
-                  [`${stats.law_count}法令DB`, "一次ソース検証済み"],
-                  ["条文根拠つき", "law_idで法令に紐づく判定"],
-                  [`ルールブック ${stats.rule_version}`, `${stats.rule_updated} 更新・${stats.rule_count}項目`],
-                ].map(([t, d], i) => (
-                  <div key={i} style={{ fontSize: 11, color: "var(--ink3)" }}>
-                    <span style={{ color: "var(--ink)", fontWeight: 600 }}>{t}</span>　{d}
-                  </div>
+              <p className="step-sub">媒体で「広告該当性」や要件が変わります（例：SNSはステマ規制、医療HPは限定解除）</p>
+              <div className="grid med">
+                {MEDIA.map((m) => (
+                  <button key={m.id} type="button" className={`tile ${media === m.id ? "on" : ""}`} aria-pressed={media === m.id} onClick={() => { setManualPick(true); setMedia(m.id); }}>
+                    <div className="t1">{m.label}</div>
+                  </button>
                 ))}
               </div>
-              {a.legal_basis.map((b, i) => {
-                const node = res.laws?.find((l) => l.id === b.law_id);
-                return (
-                  <div key={i} style={{ padding: "9px 0", borderTop: i > 0 ? "1px solid var(--line)" : "none" }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 2px" }}>
-                      {b.name} <span style={{ fontSize: 11, color: "var(--ink3)", fontWeight: 400 }}>{node?.article || ""}</span>
-                    </p>
-                    <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: 0, lineHeight: 1.7 }}>{b.point}</p>
-                    {node?.source_urls?.[0] && (
-                      <a href={node.source_urls[0]} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 11, color: "var(--acc)", textDecoration: "none" }}>一次ソースを確認 ↗</a>
-                    )}
-                  </div>
-                );
-              })}
+              {media && <p className="med-note">◎ {MEDIA.find((m) => m.id === media)?.note}</p>}
             </div>
-          )}
 
-          {/* アドバイス */}
-          {a.advice && (
-            <div className="card" style={{ background: "var(--paper2)" }}>
-              <p style={{ fontSize: 11, color: "var(--ink3)", margin: "0 0 4px" }}>薬剤師・広告コンサルより</p>
-              <p className="serif" style={{ fontSize: 14, lineHeight: 1.9, margin: 0 }}>{a.advice}</p>
-            </div>
-          )}
+            </>
+            )}
+            {loading && (
+              <div className="blk loading" role="status">
+                <span className="bar" aria-hidden="true" />
+                <span className="msg">{stepMsg}</span>
+              </div>
+            )}
 
-          {/* ルール照合（折りたたみ） */}
-          {res.matches?.length > 0 && (
-            <div className="card" style={{ background: "var(--paper2)" }}>
-              <button type="button" onClick={() => setShowRules(!showRules)}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink)", width: "100%", textAlign: "left" }}>
-                {showRules ? "▼" : "▶"} ルールブック照合（{res.matchCount}件マッチ・{res.engine?.rulebook}）
-              </button>
-              {showRules && res.matches.map((m, i) => (
-                <div key={i} style={{ padding: "8px 0", borderTop: "1px solid var(--line)", marginTop: i === 0 ? 10 : 0 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 2 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: m.risk >= 90 ? "#B42318" : m.risk >= 75 ? "#B54708" : "#175CD3" }}>{m.risk}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{m.ng.slice(0, 32)}</span>
-                    <span style={{ fontSize: 10, color: "var(--ink3)" }}>{m.genre}</span>
-                    {m.law_ids?.map((l) => <span key={l} style={{ fontSize: 10, color: "var(--acc)" }}>{l}</span>)}
+            {err && (
+              <div className="blk tint danger" role="alert">
+                <p className="blk-p strong">{err}</p>
+                {!isOverHardLimit && <button className="btn btn-rule btn-sm" type="button" onClick={run}>もう一度試す</button>}
+              </div>
+            )}
+
+            {/* ===== 結果 ===== */}
+            {a && (
+              <div ref={resultRef} className="res">
+                {/* 判定ヘッダー */}
+                <div className="blk tint verdict" style={{ borderColor: jStyle.bd, background: jStyle.bg }}>
+                  <div className="verdict-row">
+                    <div>
+                      <p className="mono" style={{ color: jStyle.c }}>最終判定</p>
+                      <p className="verdict-j" style={{ color: jStyle.c }}>{a.final_judgment}</p>
+                    </div>
+                    <div className="scores">
+                      <div>
+                        <p className="n" style={{ color: jStyle.c }}>{a.risk_score}</p>
+                        <p className="l">リスクスコア</p>
+                      </div>
+                      <div>
+                        <p className="n" style={{ color: "var(--ok)" }}>{a.sayable?.length || 0}</p>
+                        <p className="l">言える切り口</p>
+                      </div>
+                      <div>
+                        <p className="n">{a.risk_items?.length || 0}</p>
+                        <p className="l">直す点</p>
+                      </div>
+                    </div>
                   </div>
-                  {m.comment && <p style={{ fontSize: 12, color: "var(--ink2)", margin: 0, lineHeight: 1.6 }}>{m.comment}</p>}
+                  <p className="verdict-sum">{a.summary}</p>
                 </div>
-              ))}
-            </div>
-          )}
 
-          {/* LINE誘導 */}
-          {isOverFreeLimit && !isOverHardLimit && (
-            <div className="card" style={{ background: "#ECFDF3", borderColor: "#75E0A7" }}>
-              <p style={{ fontSize: 13.5, fontWeight: 600, margin: "0 0 6px", color: "#067647" }}>LINE登録で最新の法規制アップデートを配信中</p>
-              <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 10px", lineHeight: 1.7 }}>
-                無料診断は本日あと{Math.max(0, HARD_LIMIT - usageCount)}回（24時間で復活）。広告監修のご相談もLINEからどうぞ。
-              </p>
-              <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
-                style={{ display: "inline-block", fontSize: 13.5, padding: "9px 22px", borderRadius: 8, background: "#06C755", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-                LINE公式アカウントを登録
-              </a>
-            </div>
-          )}
+                {/* 原文ハイライト */}
+                {highlighted && (
+                  <div className="blk">
+                    <p className="blk-h">原文チェック <span className="blk-aside">色付き＝指摘箇所</span></p>
+                    <p className="orig">
+                      {highlighted.map((s, i) => s.level
+                        ? <mark key={i} className={s.level}>{s.t}</mark>
+                        : <span key={i}>{s.t}</span>)}
+                    </p>
+                  </div>
+                )}
 
-          {/* 免責＋CTA */}
-          <div style={{ background: "#FFFCF5", border: "1px solid #FEC84B", borderRadius: 10, padding: "10px 14px", marginBottom: 14 }}>
-            <p style={{ fontSize: 12, color: "#7A2E0E", margin: 0, lineHeight: 1.6 }}>
-              本ツールはAIによる一次診断です。最終的な適否判断は薬剤師×医療広告コンサルタントによる監修、または弁護士にご相談ください。
-            </p>
-          </div>
-          {/* 有料監修の申込（診断内容から見積を確定して構造化して送る） */}
-          <div className="card" style={{ border: "2px solid var(--ink)" }}>
-            <p className="serif" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 4px" }}>この診断を、薬剤師の監修で確定させる</p>
-            <p style={{ fontSize: 12.5, color: "var(--ink2)", margin: "0 0 12px", lineHeight: 1.7 }}>
-              AIの一次診断は参考情報です。掲載可否の確定と修正文の納品は、薬剤師・薬機法管理者による監修で行います。
-            </p>
-            <div style={{ display: "flex", gap: 18, flexWrap: "wrap", background: "var(--bg2, #F8F8F6)", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
-              <div>
-                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>原稿の分量</p>
-                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{text.length.toLocaleString()}文字</p>
+                {/* 媒体注意 */}
+                {a.media_notes && (
+                  <div className="blk tint acc">
+                    <p className="blk-k">この媒体での注意（{MEDIA.find((m) => m.id === media)?.label}）</p>
+                    <p className="blk-p ink">{a.media_notes}</p>
+                  </div>
+                )}
+
+                {/* 言える範囲（指摘より先に出す） */}
+                {a.sayable?.length > 0 && (
+                  <div className="blk tint ok">
+                    <p className="blk-h">この商材で言えること（{a.sayable.length}件）</p>
+                    <p className="blk-sub">訴求を落とさずに使える切り口です。ここから組み立ててください</p>
+                    {a.sayable.map((s, i) => (
+                      <div key={i} className="item">
+                        <p className="item-k">{s.angle}</p>
+                        <p className="item-v">「{s.example}」</p>
+                        {s.caveat && <p className="item-n">条件：{s.caveat}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 直す点 */}
+                {a.risk_items?.length > 0 && (
+                  <div className="blk">
+                    <p className="blk-h">直す点（{a.risk_items.length}件）</p>
+                    <p className="blk-sub">それぞれに代替案を付けています</p>
+                    {a.risk_items.map((item, i) => {
+                      const ls = LEVEL_STYLE[item.level] || LEVEL_STYLE.MEDIUM;
+                      return (
+                        <div key={i} className="item">
+                          <div className="risk-head">
+                            <span className="lv" style={{ background: ls.bg, color: ls.c, borderColor: ls.c }}>{item.level}</span>
+                            <span className="risk-expr">「{item.expression}」</span>
+                          </div>
+                          <p className="risk-reason">{item.reason}</p>
+                          {item.alternative && (
+                            <div className="cell ok">
+                              <p className="cell-k">こう直せば出せる</p>
+                              <p className="cell-v">{item.alternative}</p>
+                            </div>
+                          )}
+                          <span className="law">
+                            {item.law}{item.law_id ? `（${item.law_id}）` : ""}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 修正提案 */}
+                {a.suggestions?.length > 0 && (
+                  <div className="blk">
+                    <p className="blk-h">修正提案</p>
+                    {a.suggestions.map((s, i) => (
+                      <div key={i} className="item">
+                        <div className="pair">
+                          <div className="cell ng">
+                            <p className="cell-k">NG</p>
+                            <p className="cell-v">{s.original}</p>
+                          </div>
+                          <div className="cell ok">
+                            <p className="cell-k">修正案</p>
+                            <p className="cell-v">{s.revised}</p>
+                          </div>
+                        </div>
+                        {s.point && <p className="item-n">{s.point}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 法的根拠（一次ソースリンク） */}
+                {a.legal_basis?.length > 0 && (
+                  <div className="blk">
+                    <p className="blk-h">法的根拠</p>
+                    <p className="blk-sub">一次ソース（省庁・e-Gov等）で検証済みの法令データベースに基づく判定です</p>
+                    {/* 信頼の裏づけは「使う前」でなく「判定の根拠」として出す */}
+                    <div className="proof">
+                      {[
+                        [`${stats.law_count}法令DB`, "一次ソース検証済み"],
+                        ["条文根拠つき", "law_idで法令に紐づく判定"],
+                        [`ルールブック ${stats.rule_version}`, `${stats.rule_updated} 更新・${stats.rule_count}項目`],
+                      ].map(([t, d], i) => (
+                        <div key={i}>
+                          <b>{t}</b>　{d}
+                        </div>
+                      ))}
+                    </div>
+                    {a.legal_basis.map((b, i) => {
+                      const node = res.laws?.find((l) => l.id === b.law_id);
+                      return (
+                        <div key={i} className="item">
+                          <p className="item-k">
+                            {b.name} <span className="blk-aside">{node?.article || ""}</span>
+                          </p>
+                          <p className="risk-reason">{b.point}</p>
+                          {node?.source_urls?.[0] && (
+                            <a className="src" href={node.source_urls[0]} target="_blank" rel="noopener noreferrer">一次ソースを確認 ↗</a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* アドバイス */}
+                {a.advice && (
+                  <div className="blk tint plain">
+                    <p className="blk-k muted">薬剤師・広告コンサルより</p>
+                    <p className="advice">{a.advice}</p>
+                  </div>
+                )}
+
+                {/* ルール照合（折りたたみ） */}
+                {res.matches?.length > 0 && (
+                  <div className="blk tint plain">
+                    <button type="button" className="fold" aria-expanded={showRules} onClick={() => setShowRules(!showRules)}>
+                      <span className="fold-i" aria-hidden="true">{showRules ? "−" : "+"}</span> ルールブック照合（{res.matchCount}件マッチ・{res.engine?.rulebook}）
+                    </button>
+                    {showRules && res.matches.map((m, i) => (
+                      <div key={i} className="match" style={{ marginTop: i === 0 ? 12 : 0 }}>
+                        <div className="match-head">
+                          <span className="match-risk" style={{ color: m.risk >= 90 ? "var(--danger)" : m.risk >= 75 ? "var(--warn)" : "var(--info)" }}>{m.risk}</span>
+                          <span className="match-ng">{m.ng.slice(0, 32)}</span>
+                          <span className="match-genre">{m.genre}</span>
+                          {m.law_ids?.map((l) => <span key={l} className="match-law">{l}</span>)}
+                        </div>
+                        {m.comment && <p className="match-c">{m.comment}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* LINE誘導 */}
+                {isOverFreeLimit && !isOverHardLimit && (
+                  <div className="blk tint ok">
+                    <p className="blk-h">LINE登録で最新の法規制アップデートを配信中</p>
+                    <p className="blk-p">
+                      無料診断は本日あと{remaining}回（24時間で復活）。広告監修のご相談もLINEからどうぞ。
+                    </p>
+                    <a className="btn btn-sm btn-line" href={LINE_URL} target="_blank" rel="noopener noreferrer">
+                      LINE公式アカウントを登録
+                    </a>
+                  </div>
+                )}
+
+                {/* 免責＋CTA */}
+                <div className="blk tint warn slim">
+                  <p className="blk-p">
+                    本ツールはAIによる一次診断です。最終的な適否判断は薬剤師×医療広告コンサルタントによる監修、または弁護士にご相談ください。
+                  </p>
+                </div>
+                {/* 有料監修の申込（診断内容から見積を確定して構造化して送る） */}
+                <div className="blk apply">
+                  <p className="apply-h">この診断を、薬剤師の監修で確定させる</p>
+                  <p className="blk-p">
+                    AIの一次診断は参考情報です。掲載可否の確定と修正文の納品は、薬剤師・薬機法管理者による監修で行います。
+                  </p>
+                  <div className="quote">
+                    <div>
+                      <p className="l">原稿の分量</p>
+                      <p className="n">{text.length.toLocaleString()}文字</p>
+                    </div>
+                    <div>
+                      <p className="l">監修料金（3円/文字・税別）</p>
+                      <p className="n">¥{superviseFee.toLocaleString()}{superviseFee === 10000 && text.length * 3 < 10000 ? "（最低受託料金）" : ""}</p>
+                    </div>
+                    <div>
+                      <p className="l">ご返信</p>
+                      <p className="n">1営業日以内</p>
+                    </div>
+                  </div>
+                  <p className="item-n">
+                    上記が確定料金です（原稿の追加・リライト込みをご希望の場合は別途お見積り）。納品日はご返信時に確定します。
+                  </p>
+                  <div className="acts">
+                    <a className="btn btn-fill btn-sm" href={superviseMailto} onClick={handleSuperviseApply}>
+                      申込内容をコピーしてメールを開く
+                    </a>
+                    <a className="btn btn-rule btn-sm" href={consultMailto}>
+                      まずは無料で相談する
+                    </a>
+                  </div>
+
+                  {copyState === "ok" && (
+                    <p className="copy ok">
+                      ✓ 申込内容（原稿の全文つき）をコピーしました。開いたメールの本文に貼り付けて送信してください。
+                    </p>
+                  )}
+                  {copyState === "fail" && (
+                    <p className="copy fail">
+                      自動コピーができませんでした。下の内容を選択してコピーし、{CONTACT_EMAIL} 宛にお送りください。
+                    </p>
+                  )}
+
+                  <p style={{ margin: "10px 0 0" }}>
+                    <button type="button" className="link-btn muted" onClick={() => setShowApplyText((v) => !v)}>
+                      {showApplyText ? "申込内容を隠す" : "メールが開かない場合はこちら（申込内容を表示）"}
+                    </button>
+                  </p>
+                  {showApplyText && (
+                    <textarea readOnly className="apply-text" value={superviseApplyText}
+                      onFocus={(e) => e.target.select()} />
+                  )}
+                </div>
               </div>
-              <div>
-                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>監修料金（3円/文字・税別）</p>
-                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>¥{superviseFee.toLocaleString()}{superviseFee === 10000 && text.length * 3 < 10000 ? "（最低受託料金）" : ""}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: 11, color: "var(--ink3)", margin: 0 }}>ご返信</p>
-                <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>1営業日以内</p>
-              </div>
-            </div>
-            <p style={{ fontSize: 11.5, color: "var(--ink3)", margin: "0 0 12px", lineHeight: 1.6 }}>
-              上記が確定料金です（原稿の追加・リライト込みをご希望の場合は別途お見積り）。納品日はご返信時に確定します。
-            </p>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-              <a href={superviseMailto} onClick={handleSuperviseApply}
-                style={{ display: "inline-block", fontSize: 14, padding: "11px 26px", borderRadius: 8, background: "var(--ink)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-                申込内容をコピーしてメールを開く
-              </a>
-              <a href={`mailto:${CONTACT_EMAIL}?subject=広告診断・監修相談&body=【ご相談内容】%0A%0A【業種・商材】%0A%0A【広告媒体】%0A%0A【ご予算】`}
-                className="btn-ghost" style={{ display: "inline-block", fontSize: 13, padding: "11px 20px", textDecoration: "none" }}>
-                まずは無料で相談する
-              </a>
-            </div>
-
-            {copyState === "ok" && (
-              <p style={{ fontSize: 12.5, color: "var(--acc)", margin: "10px 0 0", lineHeight: 1.7 }}>
-                ✓ 申込内容（原稿の全文つき）をコピーしました。開いたメールの本文に貼り付けて送信してください。
-              </p>
-            )}
-            {copyState === "fail" && (
-              <p style={{ fontSize: 12.5, color: "#7A2E0E", margin: "10px 0 0", lineHeight: 1.7 }}>
-                自動コピーができませんでした。下の内容を選択してコピーし、{CONTACT_EMAIL} 宛にお送りください。
-              </p>
-            )}
-
-            <p style={{ margin: "10px 0 0" }}>
-              <button type="button" onClick={() => setShowApplyText((v) => !v)}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, color: "var(--ink3)", textDecoration: "underline" }}>
-                {showApplyText ? "申込内容を隠す" : "メールが開かない場合はこちら（申込内容を表示）"}
-              </button>
-            </p>
-            {showApplyText && (
-              <textarea readOnly value={superviseApplyText}
-                onFocus={(e) => e.target.select()}
-                style={{ width: "100%", minHeight: 180, marginTop: 8, fontSize: 12, lineHeight: 1.7, padding: 10,
-                         border: "1px solid var(--line2)", borderRadius: 8, background: "var(--paper2)", color: "var(--ink)" }} />
             )}
           </div>
         </div>
-      )}
 
-      {/* フッター署名 */}
-      <p style={{ fontSize: 11, color: "var(--ink3)", textAlign: "center", marginTop: 26 }}>
-        Pharma-Ad Lab｜医療広告・薬機法コンサルタント まさ（薬剤師）／ 法令DB {stats.law_count}件・ルール{stats.rule_version}（{stats.rule_count}件）
-      </p>
+        {/* フッター署名 */}
+        <p className="sign">
+          Pharma-Ad Lab｜医療広告・薬機法コンサルタント まさ（薬剤師）／ 法令DB {stats.law_count}件・ルール{stats.rule_version}（{stats.rule_count}件）
+        </p>
+      </div>
     </div>
   );
+}
+
+function LogoMark() {
+  return (
+    <svg viewBox="0 0 512 512" aria-hidden="true">
+      <rect width="512" height="512" rx="112" fill="#0f5b4e" />
+      <rect x="196" y="74" width="120" height="58" rx="16" fill="#f3f1e9" />
+      <rect x="182" y="148" width="148" height="298" rx="70" fill="#f3f1e9" />
+      <path d="M182 326h148v50a70 70 0 0 1-70 70h-8a70 70 0 0 1-70-70z" fill="#d4451b" />
+    </svg>
+  );
+}
+
+function Arw() {
+  return <span className="arw" aria-hidden="true" />;
 }
